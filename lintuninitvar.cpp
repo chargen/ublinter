@@ -1,5 +1,5 @@
 /*
- * dlint - LINT tool made by Daniel Marjamäki
+ * ublinter - lint tool made by Daniel Marjamäki
  * Copyright (C) 2007-2013 Daniel Marjamäki
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ class Token;
 class Scope;
 class Variable;
 
-class CPPCHECKLIB LintUninitVar : public Check {
+class LintUninitVar : public Check {
 public:
     /** @brief This constructor is used when registering the LintUninitVar */
     LintUninitVar() : Check(myName())
@@ -49,10 +49,7 @@ public:
     }
 
     /** @brief Run checks against the simplified token list */
-    void runSimplifiedChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
-//        LintUninitVar lintUninitVar(tokenizer, settings, errorLogger);
-//        lintUninitVar.check();
-    }
+    void runSimplifiedChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) { }
 
     /** Check for uninitialized variables */
     void check();
@@ -213,17 +210,11 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     if (!membervar.empty()) {
                         if (Token::Match(tok, "%var% . %var% ;|%cop%") && tok->strAt(2) == membervar)
                             uninitStructMemberError(tok, tok->str() + "." + membervar);
-                        else
-                            return true;
                     }
 
                     // Use variable
                     else if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
                         uninitvarError(tok, tok->str());
-
-                    else
-                        // assume that variable is assigned
-                        return true;
                 }
 
                 else if (Token::Match(tok, "sizeof|typeof|offsetof|decltype ("))
@@ -243,18 +234,10 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
-
-                else if (Token::Match(tok->previous(), "[(,] %var% [,)]"))
-                    return true;
-
             } else {
                 // Use variable
                 if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
                     uninitvarError(tok, tok->str());
-
-                else
-                    // assume that variable is assigned
-                    return true;
             }
         }
     }
@@ -281,7 +264,6 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
             if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP())) {
                 uninitvarError(tok, tok->str());
             }
-            return true;
         }
         if (Token::Match(tok, "sizeof|decltype|offsetof ("))
             tok = tok->next()->link();
@@ -291,31 +273,21 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
 
 bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const std::string &membervar)
 {
-    const Token *usetok = NULL;
-
     assert(tok->str() == "{");
 
     for (const Token * const end = tok->link(); tok != end; tok = tok->next()) {
         if (tok->varId() == var.varId()) {
             if (!membervar.empty()) {
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
-                    usetok = tok;
+                    uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
                 if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
-                    usetok = tok;
+                    uninitvarError(tok, tok->str());
             }
         }
 
         if (Token::Match(tok, "sizeof|typeof ("))
             tok = tok->next()->link();
-    }
-
-    if (usetok) {
-        if (membervar.empty())
-            uninitvarError(usetok, usetok->str());
-        else
-            uninitStructMemberError(usetok, usetok->str() + "." + membervar);
-        return true;
     }
 
     return false;

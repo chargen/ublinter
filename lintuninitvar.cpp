@@ -1,5 +1,5 @@
 /*
- * LINTUNINITVAR - LINT tool made by Daniel Marjamäki
+ * dlint - LINT tool made by Daniel Marjamäki
  * Copyright (C) 2007-2013 Daniel Marjamäki
  *
  * This program is free software: you can redistribute it and/or modify
@@ -42,10 +42,16 @@ public:
         : Check(myName(), tokenizer, settings, errorLogger)
     { }
 
-    /** @brief Run checks against the simplified token list */
-    void runSimplifiedChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
+    /** @brief Run checks against the normal token list */
+    void runChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
         LintUninitVar lintUninitVar(tokenizer, settings, errorLogger);
         lintUninitVar.check();
+    }
+
+    /** @brief Run checks against the simplified token list */
+    void runSimplifiedChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
+//        LintUninitVar lintUninitVar(tokenizer, settings, errorLogger);
+//        lintUninitVar.check();
     }
 
     /** Check for uninitialized variables */
@@ -64,23 +70,15 @@ public:
     void uninitStructMemberError(const Token *tok, const std::string &membername);
 
 private:
-    void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const {
-        LintUninitVar c(0, settings, errorLogger);
 
-        // error
-        c.uninitstringError(0, "varname", true);
-        c.uninitdataError(0, "varname");
-        c.uninitvarError(0, "varname");
-        c.uninitStructMemberError(0, "a.b");
-    }
+    void getErrorMessages(ErrorLogger*, const Settings*) const {}
 
     static std::string myName() {
-        return "LINT: Uninitialized variables";
+        return "";
     }
 
     std::string classInfo() const {
-        return "Lint for uninitialized variables\n"
-               "* using uninitialized variables and data\n";
+        return "";
     }
 };
 
@@ -300,18 +298,11 @@ bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const s
     for (const Token * const end = tok->link(); tok != end; tok = tok->next()) {
         if (tok->varId() == var.varId()) {
             if (!membervar.empty()) {
-                if (isMemberVariableAssignment(tok, membervar))
-                    return true;
-
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     usetok = tok;
-                else if (Token::Match(tok->previous(), "[(,] %var% [,)]"))
-                    return true;
             } else {
                 if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
                     usetok = tok;
-                else
-                    return true;
             }
         }
 
@@ -332,120 +323,9 @@ bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const s
 
 bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer, bool cpp)
 {
-    if (vartok->previous()->str() == "return")
-        return true;
-
-    // Passing variable to function..
-    if (Token::Match(vartok->previous(), "[(,] %var% [,)]") || Token::Match(vartok->tokAt(-2), "[(,] & %var% [,)]")) {
-        const bool address(vartok->previous()->str() == "&");
-
-        // locate start parentheses in function call..
-        int argumentNumber = 0;
-        const Token *start = vartok;
-        while (start && !Token::Match(start, "[;{}(]")) {
-            if (start->str() == ")")
-                start = start->link();
-            else if (start->str() == ",")
-                ++argumentNumber;
-            start = start->previous();
-        }
-
-        // is this a function call?
-        if (start && Token::Match(start->previous(), "%var% (")) {
-            // check how function handle uninitialized data arguments..
-            const Function *func = start->previous()->function();
-            if (func) {
-                const Variable *arg = func->getArgumentVar(argumentNumber);
-                if (arg) {
-                    const Token *argStart = arg->typeStartToken();
-                    while (argStart->previous() && argStart->previous()->isName())
-                        argStart = argStart->previous();
-                    if (!address && Token::Match(argStart, "const| struct| %type% %var% [,)]"))
-                        return true;
-                    if (Token::Match(argStart, "const %type% & %var% [,)]"))
-                        return true;
-                    if (pointer && !address && Token::Match(argStart, "%type% * %var% [,)]"))
-                        return true;
-                    if ((pointer || address) && Token::Match(argStart, "const %type% * %var% [,)]"))
-                        return true;
-                }
-
-            } else if (Token::Match(start->previous(), "if|while|for")) {
-                // control-flow statement reading the variable "by value"
-                return true;
-            }
-        }
-    }
-
-    if (Token::Match(vartok->previous(), "++|--|%cop%")) {
-        if (cpp && vartok->previous()->str() == ">>") {
-            // assume that variable is initialized
-            return false;
-        }
-
-        // is there something like: ; "*((&var ..expr.. ="  => the variable is assigned
-        if (vartok->previous()->str() == "&") {
-            const Token *tok2 = vartok->tokAt(-2);
-            if (tok2 && (tok2->isConstOp() || tok2->str() == "("))
-                return false; // address of
-            if (tok2 && tok2->str() == ")")
-                tok2 = tok2->link()->previous();
-            if (Token::Match(tok2,"[()] ( %type% *| ) &") && tok2->tokAt(2)->varId() == 0)
-                return false; // cast
-            while (tok2 && tok2->str() == "(")
-                tok2 = tok2->previous();
-            while (tok2 && tok2->str() == "*")
-                tok2 = tok2->previous();
-            if (Token::Match(tok2, "[;{}] *")) {
-                // there is some such code before vartok: "[*]+ [(]* &"
-                // determine if there is a = after vartok
-                for (tok2 = vartok; tok2; tok2 = tok2->next()) {
-                    if (Token::Match(tok2, "[;{}]"))
-                        break;
-                    if (tok2->str() == "=")
-                        return false;
-                }
-            }
-        }
-
-        if (vartok->previous()->str() != "&" || !Token::Match(vartok->tokAt(-2), "[(,=?:]")) {
-            return true;
-        }
-    }
-
-    bool unknown = false;
-    if (pointer && CheckNullPointer::isPointerDeRef(vartok, unknown)) {
-        // function parameter?
-        bool functionParameter = false;
-        if (Token::Match(vartok->tokAt(-2), "%var% (") || vartok->previous()->str() == ",")
-            functionParameter = true;
-
-        // if this is not a function parameter report this dereference as variable usage
-        if (!functionParameter)
-            return true;
-    }
-
-    if (cpp && Token::Match(vartok->next(), "<<|>>")) {
-        // Is this calculation done in rhs?
-        const Token *tok = vartok;
-        while (tok && Token::Match(tok, "%var%|.|::"))
-            tok = tok->previous();
-        if (Token::Match(tok, "[;{}]"))
-            return false;
-
-        // Is variable a known POD type then this is a variable usage,
-        // otherwise we assume it's not.
-        const Variable *var = vartok->variable();
-        return (var && var->typeStartToken()->isStandardType());
-    }
-
-    if (vartok->next() && vartok->next()->isOp() && !vartok->next()->isAssignmentOp())
-        return true;
-
-    if (vartok->strAt(1) == "]")
-        return true;
-
-    return false;
+    if (Token::Match(vartok->previous(), "[;{}=] %var% ="))
+        return false;
+    return true;
 }
 
 bool LintUninitVar::isMemberVariableAssignment(const Token *tok, const std::string &membervar) const

@@ -1,22 +1,13 @@
-dlint
-=====
+ublinter
+========
 
-lint tool for C/C++ code
+Linter tool that detect undefined behaviour (only checks for using uninitialized variables yet). This is a noisy tool. The goal is to detect all bugs in standard C/C++ code.
 
-goal:
-detect all uninitialized variables.
-
-This tool is meant to be a noisy tool. Most/all warnings will be noise.
-
-Unfortunately, dlint doesn't (yet) detect all uninitialized variables. Bugs inside unreachable scope are not found:
-
-    int x;
-    if (0) {
-        return x; // <- bug not found, because the code is unreachable
-    }
+ublinter doesn't look for syntax errors. Checking non-standard C/C++ code should be possible but there is no guarantee ublinter will detect all bugs.
 
 Compiling:
 
 You must have the Cppcheck source code in the folder ../cppcheck
 
 Type: make
+

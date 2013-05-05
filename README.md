@@ -15,3 +15,8 @@ Unfortunately, dlint doesn't (yet) detect all uninitialized variables. Bugs insi
         return x; // <- bug not found, because the code is unreachable
     }
 
+Compiling:
+
+You must have the Cppcheck source code in the folder ../cppcheck
+
+Type: make

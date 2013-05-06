@@ -109,6 +109,9 @@ void LintUninitVar::checkScope(const Scope* scope)
             i->isStatic() || i->isExtern() || i->isConst() || i->isArray() || i->isReference())
             continue;
 */
+        if (i->isStatic())
+            continue;
+
         if (i->nameToken()->strAt(1) == "(")
             continue;
 
@@ -189,6 +192,9 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
         // for/while..
         if (Token::Match(tok, "for|while (")) {
+            if (membervar.empty() && Token::Match(tok, "for ( %varid% =", var.varId()))
+                return true;
+
             // is variable initialized in for-head (don't report errors yet)?
             if (checkIfForWhileHead(tok->next(), var, membervar))
                 return true;
@@ -196,7 +202,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             // goto the {
             tok = tok->next()->link()->next();
 
-            checkLoopBody(tok, var, membervar);
+            checkScopeForVariable(scope, tok->next(), var, membervar);
 
             // goto the }
             tok = tok->link();

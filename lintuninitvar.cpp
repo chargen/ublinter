@@ -221,7 +221,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     else if (isVariableUsage(tok, var.isPointer()))
                         uninitvarError(tok, tok->str());
 
-                    else
+                    else if (!Token::Match(tok->previous(), "[;{}] %var% [|."))
                         return true;
                 }
 
@@ -246,7 +246,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 // Use variable
                 if (isVariableUsage(tok, var.isPointer()))
                     uninitvarError(tok, tok->str());
-                else
+                else if (!Token::Match(tok->previous(), "[;{}] %var% [|."))
                     return true;
             }
         }
@@ -271,9 +271,8 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
                 continue;
             }
 
-            if (isVariableUsage(tok, var.isPointer())) {
+            if (isVariableUsage(tok, var.isPointer()))
                 uninitvarError(tok, tok->str());
-            }
         }
         if (Token::Match(tok, "sizeof|decltype|offsetof ("))
             tok = tok->next()->link();
@@ -309,6 +308,13 @@ bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
         return false;
     if (!pointer && Token::Match(vartok->previous(), "[;{}=] %var% . %var% ="))
         return false;
+    if (Token::Match(vartok->previous(), "[;{}] %var% [")) {
+        const Token *tok2 = vartok->next();
+        while (tok2 && tok2->str() == "[")
+            tok2 = tok2->link()->next();
+        if (tok2 && tok2->str() == "=")
+            return false;
+    }
     return true;
 }
 

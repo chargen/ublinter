@@ -112,10 +112,9 @@ void LintUninitVar::checkScope(const Scope* scope)
         if (i->nameToken()->strAt(1) == "(")
             continue;
 
-        const Token* tok = i->typeEndToken();
-
-        while (tok && tok->str() != ";")
-            tok = tok->next();
+        const Token* tok = Token::findmatch(i->typeEndToken(), "[=;]");
+        if (tok && tok->str() == "=")
+            continue;
 
         checkScopeForVariable(scope, tok, *i, "");
 

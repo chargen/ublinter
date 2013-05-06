@@ -57,7 +57,7 @@ public:
     bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar);
     bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar);
     bool checkLoopBody(const Token *tok, const Variable& var, const std::string &membervar);
-    static bool isVariableUsage(const Token *vartok, bool ispointer, bool cpp);
+    static bool isVariableUsage(const Token *vartok, bool ispointer);
     bool isMemberVariableAssignment(const Token *tok, const std::string &membervar) const;
     bool isMemberVariableUsage(const Token *tok, bool isPointer, const std::string &membervar) const;
 
@@ -218,7 +218,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     }
 
                     // Use variable
-                    else if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
+                    else if (isVariableUsage(tok, var.isPointer()))
                         uninitvarError(tok, tok->str());
 
                     else
@@ -244,7 +244,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
                 // Use variable
-                if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
+                if (isVariableUsage(tok, var.isPointer()))
                     uninitvarError(tok, tok->str());
                 else
                     return true;
@@ -271,7 +271,7 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
                 continue;
             }
 
-            if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP())) {
+            if (isVariableUsage(tok, var.isPointer())) {
                 uninitvarError(tok, tok->str());
             }
         }
@@ -291,7 +291,7 @@ bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const s
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
-                if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
+                if (isVariableUsage(tok, var.isPointer()))
                     uninitvarError(tok, tok->str());
             }
         }
@@ -303,7 +303,7 @@ bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const s
     return false;
 }
 
-bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer, bool cpp)
+bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
 {
     if (Token::Match(vartok->previous(), "[;{}=] %var% ="))
         return false;
@@ -339,7 +339,7 @@ bool LintUninitVar::isMemberVariableUsage(const Token *tok, bool isPointer, cons
 
     if (Token::Match(tok, "%var% . %var%") && tok->strAt(2) == membervar)
         return true;
-    else if (Token::Match(tok->previous(), "[(,] %var% [,)]") && isVariableUsage(tok, isPointer, _tokenizer->isCPP()))
+    else if (Token::Match(tok->previous(), "[(,] %var% [,)]") && isVariableUsage(tok, isPointer))
         return true;
 
     return false;

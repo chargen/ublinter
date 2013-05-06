@@ -215,6 +215,9 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     // Use variable
                     else if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
                         uninitvarError(tok, tok->str());
+
+                    else
+                        return true;
                 }
 
                 else if (Token::Match(tok, "sizeof|typeof|offsetof|decltype ("))
@@ -238,6 +241,8 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 // Use variable
                 if (isVariableUsage(tok, var.isPointer(), _tokenizer->isCPP()))
                     uninitvarError(tok, tok->str());
+                else
+                    return true;
             }
         }
     }

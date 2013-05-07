@@ -56,12 +56,10 @@ public:
     void checkScope(const Scope* scope);
     bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar);
     bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar);
-    bool checkLoopBody(const Token *tok, const Variable& var, const std::string &membervar);
     static bool isVariableUsage(const Token *vartok, bool ispointer);
     bool isMemberVariableAssignment(const Token *tok, const std::string &membervar) const;
     bool isMemberVariableUsage(const Token *tok, bool isPointer, const std::string &membervar) const;
 
-    void uninitstringError(const Token *tok, const std::string &varname, bool strncpy_);
     void uninitdataError(const Token *tok, const std::string &varname);
     void uninitvarError(const Token *tok, const std::string &varname);
     void uninitStructMemberError(const Token *tok, const std::string &membername);
@@ -280,28 +278,6 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
     return false;
 }
 
-bool LintUninitVar::checkLoopBody(const Token *tok, const Variable& var, const std::string &membervar)
-{
-    assert(tok->str() == "{");
-
-    for (const Token * const end = tok->link(); tok != end; tok = tok->next()) {
-        if (tok->varId() == var.varId()) {
-            if (!membervar.empty()) {
-                if (isMemberVariableUsage(tok, var.isPointer(), membervar))
-                    uninitStructMemberError(tok, tok->str() + "." + membervar);
-            } else {
-                if (isVariableUsage(tok, var.isPointer()))
-                    uninitvarError(tok, tok->str());
-            }
-        }
-
-        if (Token::Match(tok, "sizeof|typeof ("))
-            tok = tok->next()->link();
-    }
-
-    return false;
-}
-
 bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
 {
     if (Token::Match(vartok->previous(), "[;{}=] %var% ="))
@@ -351,11 +327,6 @@ bool LintUninitVar::isMemberVariableUsage(const Token *tok, bool isPointer, cons
     return false;
 }
 
-void LintUninitVar::uninitstringError(const Token *tok, const std::string &varname, bool strncpy_)
-{
-    reportError(tok, Severity::error, "uninitstring", "Dangerous usage of '" + varname + "'" + (strncpy_ ? " (strncpy doesn't always null-terminate it)." : " (not null-terminated)."));
-}
-
 void LintUninitVar::uninitdataError(const Token *tok, const std::string &varname)
 {
     reportError(tok, Severity::error, "uninitdata", "Memory is allocated but not initialized: " + varname);
@@ -363,7 +334,7 @@ void LintUninitVar::uninitdataError(const Token *tok, const std::string &varname
 
 void LintUninitVar::uninitvarError(const Token *tok, const std::string &varname)
 {
-    reportError(tok, Severity::error, "uninitvar", "Uninitialized variable: " + varname);
+    reportError(tok, Severity::error, "lintuninitvar", "Uninitialized variable: " + varname);
 }
 
 void LintUninitVar::uninitStructMemberError(const Token *tok, const std::string &membername)

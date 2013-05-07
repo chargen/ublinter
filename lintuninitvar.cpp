@@ -19,7 +19,6 @@
 //---------------------------------------------------------------------------
 #include "mathlib.h"
 #include "symboldatabase.h"
-#include "checknullpointer.h"
 #include "config.h"
 #include "check.h"
 #include "settings.h"

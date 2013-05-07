@@ -27,12 +27,6 @@ public:
     void reportErr(const ErrorLogger::ErrorMessage &msg) {
         std::cerr << msg.toString(false) << std::endl;
     }
-/*
-    void reportProgress(const std::string &filename,
-                        const char stage[],
-                        const unsigned int value) {
-    }
-*/
 };
 
 

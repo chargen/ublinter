@@ -101,11 +101,11 @@ void LintUninitVar::check()
 void LintUninitVar::checkScope(const Scope* scope)
 {
     for (std::list<Variable>::const_iterator i = scope->varlist.begin(); i != scope->varlist.end(); ++i) {
-/*
-        if ((_tokenizer->isCPP() && i->type() && !i->isPointer() && i->type()->needInitialization != Type::True) ||
-            i->isStatic() || i->isExtern() || i->isConst() || i->isArray() || i->isReference())
-            continue;
-*/
+        /*
+                if ((_tokenizer->isCPP() && i->type() && !i->isPointer() && i->type()->needInitialization != Type::True) ||
+                    i->isStatic() || i->isExtern() || i->isConst() || i->isArray() || i->isReference())
+                    continue;
+        */
         if (i->isStatic())
             continue;
 
@@ -203,6 +203,40 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
             // goto the }
             tok = tok->link();
+        }
+
+        // switch
+        if (Token::simpleMatch(tok, "switch (")) {
+            if (checkIfForWhileHead(tok->next(), var, membervar))
+                return true;
+
+            // goto the {
+            tok = tok->next()->link()->next();
+
+            if (!tok)
+                break;
+            if (tok->str() == "{") {
+                const Token *endTok = tok->link();
+                bool init = true;
+                bool def = false;
+                for (const Token *tok2 = tok->next(); tok2 != endTok; tok2 = tok2->next()) {
+                    if (Token::Match(tok2, "case %any% :") &&
+                        !checkScopeForVariable(scope, tok2, var, membervar)) {
+                        init = false;
+                    }
+                    if (Token::simpleMatch(tok2, "default :")) {
+                        def = true;
+                        if (!checkScopeForVariable(scope, tok2, var, membervar))
+                            init = false;
+                    }
+                }
+
+                // goto the }
+                tok = tok->link();
+
+                if (def && init)
+                    return true;
+            }
         }
 
         if (Token::Match(tok, "return|break|continue|throw|goto")) {

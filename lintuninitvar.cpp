@@ -262,7 +262,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 tok = tok->next();
             }
 
-            return true;
+            return false;
         }
 
         // variable is seen..

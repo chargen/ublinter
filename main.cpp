@@ -1,5 +1,7 @@
 
 #include "cppcheck.h"
+#include "filelister.h"
+#include "path.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -14,7 +16,7 @@ public:
         , cppcheck(*this,false) {
     }
 
-    void check(const char filename[]) {
+    void check(const std::string &filename) {
         cppcheck.check(filename);
     }
 
@@ -38,9 +40,16 @@ int main(int argc, char **argv)
 {
     std::cout << "ublinter" << std::endl;
 
-    if (argc == 2) {
-        CppcheckExecutor cppcheckExecutor;
-        cppcheckExecutor.check(argv[1]);
+    std::map<std::string, std::size_t> files;
+    for (int i = 1; i < argc; i++) {
+        std::string path = Path::fromNativeSeparators(argv[i]);
+        path = Path::removeQuotationMarks(path);
+        FileLister::recursiveAddFiles(files, Path::toNativeSeparators(path));
+    }
+
+    CppcheckExecutor cppcheckExecutor;
+    for (std::map<std::string,std::size_t>::const_iterator it = files.begin(); it != files.end(); ++it) {
+        cppcheckExecutor.check(it->first);
     }
 
     return EXIT_SUCCESS;

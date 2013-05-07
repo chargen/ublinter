@@ -137,6 +137,8 @@ void LintUninitVar::checkScope(const Scope* scope)
 
 bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar)
 {
+    const bool startsWithCase(tok->str() == "case");
+
     for (; tok; tok = tok->next()) {
         // End of scope..
         if (tok->str() == "}") {
@@ -262,7 +264,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 tok = tok->next();
             }
 
-            return false;
+            return !startsWithCase;
         }
 
         // variable is seen..

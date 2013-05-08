@@ -1,6 +1,9 @@
 
 all:	ublinter
 
+clean:
+	rm -rf ublinter.exe *.o
+
 main.o:	main.cpp
 	g++ -g -I. -Iexternals/cppcheck -c main.cpp
 
@@ -52,7 +55,5 @@ tokenize.o:	externals/cppcheck/tokenize.cpp
 tokenlist.o:	externals/cppcheck/tokenlist.cpp
 	g++ -g -I. -Iexternals/cppcheck -c externals/cppcheck/tokenlist.cpp
 
-ublinter:	main.o	lintuninitvar.o	cppcheck.o	errorlogger.o	executionpath.o	filelister.o	mathlib.o	path.o	preprocessor.o	settings.o	suppressions.o	symboldatabase.o	templatesimplifier.o	timer.o	token.o	tokenize.o	tokenlist.o
-	g++ -g -o ublinter *.o
-
-
+ublinter:	main.o lintuninitvar.o cppcheck.o errorlogger.o executionpath.o filelister.o mathlib.o path.o preprocessor.o settings.o suppressions.o symboldatabase.o templatesimplifier.o timer.o token.o tokenize.o tokenlist.o
+	g++ -g -o ublinter *.o -lshlwapi

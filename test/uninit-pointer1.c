@@ -1,5 +1,5 @@
-
-int f() {
+int f()
+{
     int *p;
     int a, b;
     if (x)
@@ -8,4 +8,3 @@ int f() {
         p = &b;
     return *p;
 }
-

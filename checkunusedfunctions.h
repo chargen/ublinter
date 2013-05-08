@@ -1,4 +1,3 @@
-
 #ifndef checkunusedfunctionsH
 #define checkunusedfunctionsH
 
@@ -12,4 +11,3 @@ public:
 };
 
 #endif
-

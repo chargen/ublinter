@@ -2,7 +2,7 @@
 all:	ublinter
 
 clean:
-	rm -rf ublinter.exe *.o
+	-rm ublinter ublinter.exe *.o
 
 main.o:	main.cpp
 	g++ -g -I. -Iexternals/cppcheck -c main.cpp

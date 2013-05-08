@@ -1,5 +1,5 @@
-
-int f(int a) {
+int f(int a)
+{
     int x;
     while (a > 0) {
         x = 1;
@@ -7,4 +7,3 @@ int f(int a) {
     }
     return x;
 }
-

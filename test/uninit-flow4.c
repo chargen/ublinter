@@ -1,5 +1,5 @@
-
-int f(int y) {
+int f(int y)
+{
     int x;
     if (y > 3)
         x = 2;
@@ -7,4 +7,3 @@ int f(int y) {
         return 1;
     return x;
 }
-

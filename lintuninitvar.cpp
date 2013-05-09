@@ -22,7 +22,6 @@
 #include "config.h"
 #include "check.h"
 #include "settings.h"
-#include <cassert>
 
 //---------------------------------------------------------------------------
 
@@ -234,7 +233,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 }
 
                 // goto the }
-                tok = tok->link();
+                tok = endTok;
 
                 if (def && init)
                     return true;
@@ -276,11 +275,17 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
+                // assign _whole_ var/array/struct
+                if (Token::Match(tok->previous(), "[;{}=] %var% ="))
+                    return true;
+                if (Token::Match(tok->tokAt(-2), "va_start ( %var% ,"))
+                    return true;
+                if (Token::Match(tok->tokAt(-3), "memset|memcpy ( & %varid% , 0 , sizeof ( %varid% ) )", var.varId()))
+                    return true;
+
                 // Use variable
                 if (isVariableUsage(tok, var.isPointer()))
                     uninitvarError(tok, tok->str());
-                else if (!Token::Match(tok->previous(), "[;{}] %var% [|."))
-                    return true;
             }
         }
     }

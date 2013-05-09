@@ -18,5 +18,45 @@ ublinter currently uses the cppcheck-core to parse code. I've looked at other
 parsers too (gccxml, clang, frama-c) but this was the parser I could get started with
 quickest. I might switch from cppcheck to another parser later.
 
-Compiling:
-	make
+Limitations
+-----------
+
+The intention is that the uninitialized variables checking will only look for cases where there is UB.
+
+I don't intend to report errors about global/static variables:
+
+    #include <stdio.h>
+
+    int x;
+
+    int main() {
+        printf("%i\n", x); // No UB => no error message
+        return 0;
+    }
+
+I don't intend to report errors about standard classes:
+
+    #include <string>
+    #include <iostream>
+
+    int main() {
+        std::string str;
+        std::cout << str << std::endl; // No UB => no error
+        return 0;
+    }
+
+
+Compiling
+---------
+
+Basically you just use:
+
+    cmake .
+    make
+
+If that doesn't work well, you might need to tell cmake what generator to use. Execute cmake without parameters. cmake will then write help. look at the bottom of this help, there the generators are listed. Pick the generator that suits you best, for instance "MinGW Makefiles" and then try:
+
+    cmake -G"MinGW Makefiles" .
+    make
+
+

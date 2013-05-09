@@ -54,6 +54,7 @@ public:
     void checkScope(const Scope* scope);
     bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar);
     bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar);
+    static bool isVariableAssignment(const Token *vartok, bool pointer, bool full);
     static bool isVariableUsage(const Token *vartok, bool ispointer);
     bool isMemberVariableAssignment(const Token *tok, const std::string &membervar) const;
     bool isMemberVariableUsage(const Token *tok, bool isPointer, const std::string &membervar) const;
@@ -288,12 +289,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                         else if (isMemberVariableUsage(tok2, var.isPointer(), membervar))
                             uninitStructMemberError(tok2, tok2->str() + "." + membervar);
                     } else {
-                        // assign _whole_ var/array/struct
-                        if (Token::Match(tok2->previous(), "[;{}=] %var% ="))
-                            assign = true;
-                        else if (Token::Match(tok2->tokAt(-2), "va_start ( %var% ,"))
-                            assign = true;
-                        else if (Token::Match(tok2->tokAt(-3), "memset|memcpy ( & %varid% , 0 , sizeof ( %varid% ) )", var.varId()))
+                        if (isVariableAssignment(tok2, var.isPointer(), true))
                             assign = true;
 
                         // Use variable
@@ -325,12 +321,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
-                // assign _whole_ var/array/struct
-                if (Token::Match(tok->previous(), "[;{}=] %var% ="))
-                    return true;
-                if (Token::Match(tok->tokAt(-2), "va_start ( %var% ,"))
-                    return true;
-                if (Token::Match(tok->tokAt(-3), "memset|memcpy ( & %varid% , 0 , sizeof ( %varid% ) )", var.varId()))
+                if (isVariableAssignment(tok, var.isPointer(), true))
                     return true;
 
                 // Use variable
@@ -368,19 +359,34 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
     return false;
 }
 
-bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
+bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool full)
 {
+    // assign _whole_ var/array/struct
     if (Token::Match(vartok->previous(), "[;{}=] %var% ="))
-        return false;
-    if (!pointer && Token::Match(vartok->previous(), "[;{}=] %var% . %var% ="))
-        return false;
-    if (Token::Match(vartok->previous(), "[;{}] %var% [")) {
+        return true;
+    else if (Token::Match(vartok->tokAt(-2), "va_start ( %var% ,"))
+        return true;
+    else if (Token::Match(vartok->tokAt(-3), "memset ( & %var% , 0 , sizeof ( %varid% ) )", vartok->varId()))
+        return true;
+
+    // assigning part of array/struct
+    if (!full && !pointer && Token::Match(vartok->previous(), "[;{}=] %var% . %var% ="))
+        return true;
+    if (!full && Token::Match(vartok->previous(), "[;{}] %var% [")) {
         const Token *tok2 = vartok->next();
         while (tok2 && tok2->str() == "[")
             tok2 = tok2->link()->next();
         if (tok2 && tok2->str() == "=")
-            return false;
+            return true;
     }
+
+    return false;
+}
+
+bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
+{
+    if (isVariableAssignment(vartok, pointer, false))
+        return false;
     return true;
 }
 

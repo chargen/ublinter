@@ -240,7 +240,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             }
         }
 
-        if (Token::Match(tok, "return|break|continue|throw|goto")) {
+        if (Token::Match(tok, "return|break|continue|throw")) {
             while (tok && tok->str() != ";") {
                 // variable is seen..
                 if (tok->varId() == var.varId()) {
@@ -264,6 +264,56 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             }
 
             return !startsWithCase;
+        }
+
+        if (Token::Match(tok, "goto %var% ;")) {
+            // locate end of variable scope
+            const Token *tok2 = var.typeStartToken();
+            while (tok2 && tok2->str() != "{") {
+                if (tok2->str() == "}")
+                    tok2 = tok2->link();
+                tok2 = tok2->previous();
+            }
+            const Token * const endToken = tok2->link();
+
+            // Warn if variable is used anywhere in the scope. Assumes that execution
+            // runs wildly.
+            for (tok2 = Token::findsimplematch(var.typeEndToken(), ";"); tok2 != endToken; tok2 = tok2->next()) {
+                if (tok2->varId() == var.varId()) {
+                    bool assign = false;
+
+                    if (!membervar.empty()) {
+                        if (isMemberVariableAssignment(tok2, membervar))
+                            assign = true;
+                        else if (isMemberVariableUsage(tok2, var.isPointer(), membervar))
+                            uninitStructMemberError(tok2, tok2->str() + "." + membervar);
+                    } else {
+                        // assign _whole_ var/array/struct
+                        if (Token::Match(tok2->previous(), "[;{}=] %var% ="))
+                            assign = true;
+                        else if (Token::Match(tok2->tokAt(-2), "va_start ( %var% ,"))
+                            assign = true;
+                        else if (Token::Match(tok2->tokAt(-3), "memset|memcpy ( & %varid% , 0 , sizeof ( %varid% ) )", var.varId()))
+                            assign = true;
+
+                        // Use variable
+                        else if (isVariableUsage(tok2, var.isPointer()))
+                            uninitvarError(tok2, tok2->str());
+                    }
+
+                    if (assign) {
+                        while (tok2 && tok2->str() != "}" && !Token::Match(tok2, "%var% :")) {
+                            if (tok2->str() == "{")
+                                tok2 = tok2->link();
+                            tok2 = tok2->next();
+                        }
+                        if (!tok2 || tok2 == endToken)
+                            break;
+                    }
+                }
+            }
+
+            return true;
         }
 
         // variable is seen..

@@ -11,9 +11,10 @@ private:
     CppCheck cppcheck;
 
 public:
-    CppcheckExecutor()
+    CppcheckExecutor(const Settings &settings)
         : ErrorLogger()
         , cppcheck(*this,false) {
+        cppcheck.settings() = settings;
     }
 
     void check(const std::string &filename) {
@@ -103,7 +104,7 @@ int main(int argc, char **argv)
         }
     }
 
-    CppcheckExecutor cppcheckExecutor;
+    CppcheckExecutor cppcheckExecutor(settings);
     for (std::map<std::string,std::size_t>::const_iterator it = files.begin(); it != files.end(); ++it) {
         cppcheckExecutor.check(it->first);
     }

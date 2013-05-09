@@ -22,7 +22,8 @@ public:
     }
 
     void reportOut(const std::string &outmsg) {
-        std::cout << outmsg << std::endl;
+        if (!cppcheck.settings()._errorsOnly)
+            std::cout << outmsg << std::endl;
     }
 
     void reportErr(const ErrorLogger::ErrorMessage &msg) {
@@ -33,8 +34,6 @@ public:
 
 int main(int argc, char **argv)
 {
-    std::cout << "ublinter" << std::endl;
-
     Settings settings;
     std::map<std::string, std::size_t> files;
     for (int i = 1; i < argc; i++) {
@@ -96,6 +95,9 @@ int main(int argc, char **argv)
 
             settings._includePaths.push_back(path);
         }
+
+        else if (std::strcmp(argv[i], "-q") == 0)
+            settings._errorsOnly = true;
 
         else {
             std::string path = Path::fromNativeSeparators(argv[i]);

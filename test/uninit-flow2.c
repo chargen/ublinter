@@ -5,5 +5,5 @@ int f(int a)
         x = 1;
         a--;
     }
-    return x;
+    return x; // BAD
 }

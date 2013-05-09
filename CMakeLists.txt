@@ -9,8 +9,7 @@ endif (WIN32 AND NOT CYGWIN)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-add_executable(ublinter
-    main.cpp
+set(SRCS
     lintuninitvar.cpp
     externals/cppcheck/cppcheck.cpp
     externals/cppcheck/errorlogger.cpp
@@ -26,8 +25,10 @@ add_executable(ublinter
     externals/cppcheck/timer.cpp
     externals/cppcheck/token.cpp
     externals/cppcheck/tokenize.cpp
-    externals/cppcheck/tokenlist.cpp
-)
+    externals/cppcheck/tokenlist.cpp)
+
+add_executable(ublinter main.cpp ${SRCS})
+add_executable(testrunner testrunner.cpp ${SRCS})
 
 target_link_libraries(ublinter ${LIBS})
 

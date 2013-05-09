@@ -9,5 +9,5 @@ int f(int a)
         x=2;
         break;
     };
-    return x;
+    return x; // BAD
 }

@@ -3,8 +3,8 @@ int f()
     int *p;
     int a, b;
     if (x)
-        p = &a;
+        p = &a; // BAD
     else
-        p = &b;
+        p = &b; // BAD
     return *p;
 }

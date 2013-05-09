@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 project(ublinter)
+
 include_directories(. externals/cppcheck)
+
 if (WIN32 AND NOT CYGWIN)
     set(LIBS shlwapi)
 endif (WIN32 AND NOT CYGWIN)
+
+set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(ublinter
     main.cpp

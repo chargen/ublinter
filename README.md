@@ -49,6 +49,8 @@ I don't intend to report errors about standard classes:
 Compiling
 ---------
 
+You should be able to use almost any C++ compiler to compile ublinter.
+
 Basically you just use:
 
     cmake .
@@ -59,4 +61,7 @@ If that doesn't work well, you might need to tell cmake what generator to use. E
     cmake -G"MinGW Makefiles" .
     make
 
+Manual compilation with g++ (the "-lshlwapi" at the end is necessary if you compile in windows):
+
+    g++ -o ublinter -I. -Iexternals/cppcheck main.cpp lintuninitvar.cpp externals/cppcheck/*.cpp -lshlwapi
 

@@ -44,3 +44,10 @@ int alias3()
     return *p; // BAD
 }
 
+void alias4()
+{
+    int a;
+    int *p = &a;
+    if (*p == 0) {} // BAD
+}
+

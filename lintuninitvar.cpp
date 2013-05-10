@@ -53,7 +53,7 @@ public:
     void check();
     void checkScope(const Scope* scope);
     bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, std::set<unsigned int> * const aliases, const std::string &membervar);
-    bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar);
+    bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::set<unsigned int> &aliases, const std::string &membervar);
     static bool isVariableAssignment(const Token *vartok, bool pointer, bool alias, bool full);
     static bool isVariableUsage(const Token *vartok, bool ispointer);
     bool isMemberVariableAssignment(const Token *tok, const std::string &membervar) const;
@@ -159,7 +159,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         // Inner scope..
         if (Token::simpleMatch(tok, "if (")) {
             // initialization / usage in condition..
-            if (checkIfForWhileHead(tok->next(), var, membervar))
+            if (checkIfForWhileHead(tok->next(), var, *aliases, membervar))
                 return true;
 
             // goto the {
@@ -208,7 +208,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 return true;
 
             // is variable initialized in for-head (don't report errors yet)?
-            if (checkIfForWhileHead(tok->next(), var, membervar))
+            if (checkIfForWhileHead(tok->next(), var, *aliases, membervar))
                 return true;
 
             // goto the {
@@ -222,7 +222,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
         // switch
         if (Token::simpleMatch(tok, "switch (")) {
-            if (checkIfForWhileHead(tok->next(), var, membervar))
+            if (checkIfForWhileHead(tok->next(), var, *aliases, membervar))
                 return true;
 
             // goto the {
@@ -363,11 +363,11 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
     return false;
 }
 
-bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar)
+bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::set<unsigned int> &aliases, const std::string &membervar)
 {
     const Token * const endpar = startparentheses->link();
     for (const Token *tok = startparentheses->next(); tok && tok != endpar; tok = tok->next()) {
-        if (tok->varId() == var.varId()) {
+        if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases.find(tok->varId()) != aliases.end())) {
             if (Token::Match(tok, "%var% . %var%")) {
                 if (tok->strAt(2) == membervar) {
                     if (isMemberVariableAssignment(tok, membervar))

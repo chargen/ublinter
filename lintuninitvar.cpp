@@ -375,6 +375,8 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
 
                     if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                         uninitStructMemberError(tok, tok->str() + "." + membervar);
+                } else if (membervar.empty()) {
+                    uninitvarError(tok, tok->str());
                 }
                 continue;
             }

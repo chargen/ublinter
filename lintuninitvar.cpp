@@ -52,9 +52,9 @@ public:
     /** Check for uninitialized variables */
     void check();
     void checkScope(const Scope* scope);
-    bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar);
+    bool checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, std::set<unsigned int> * const aliases, const std::string &membervar);
     bool checkIfForWhileHead(const Token *startparentheses, const Variable& var, const std::string &membervar);
-    static bool isVariableAssignment(const Token *vartok, bool pointer, bool full);
+    static bool isVariableAssignment(const Token *vartok, bool pointer, bool alias, bool full);
     static bool isVariableUsage(const Token *vartok, bool ispointer);
     bool isMemberVariableAssignment(const Token *tok, const std::string &membervar) const;
     bool isMemberVariableUsage(const Token *tok, bool isPointer, const std::string &membervar) const;
@@ -116,7 +116,8 @@ void LintUninitVar::checkScope(const Scope* scope)
         if (tok && tok->str() == "=")
             continue;
 
-        checkScopeForVariable(scope, tok, *i, "");
+        std::set<unsigned int> aliases;
+        checkScopeForVariable(scope, tok, *i, &aliases, "");
 
         if (Token::Match(i->typeStartToken(), "struct %type% %var% ;")) {
             const std::string structname(i->typeStartToken()->next()->str());
@@ -126,8 +127,10 @@ void LintUninitVar::checkScope(const Scope* scope)
                 if (scope2->className == structname && scope2->numConstructors == 0U) {
                     for (std::list<Variable>::const_iterator it = scope2->varlist.begin(); it != scope2->varlist.end(); ++it) {
                         const Variable &var = *it;
-                        if (!var.isArray())
-                            checkScopeForVariable(scope, tok, *i, var.name());
+                        if (!var.isArray()) {
+                            aliases.clear();
+                            checkScopeForVariable(scope, tok, *i, &aliases, var.name());
+                        }
                     }
                 }
             }
@@ -135,7 +138,7 @@ void LintUninitVar::checkScope(const Scope* scope)
     }
 }
 
-bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, const std::string &membervar)
+bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, const Variable& var, std::set<unsigned int> * const aliases, const std::string &membervar)
 {
     const bool startsWithCase(tok->str() == "case");
 
@@ -147,7 +150,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
         // Unconditional inner scope..
         if (tok->str() == "{" && Token::Match(tok->previous(), "[;{}=]")) {
-            if (checkScopeForVariable(scope, tok->next(), var, membervar))
+            if (checkScopeForVariable(scope, tok->next(), var, aliases, membervar))
                 return true;
             tok = tok->link();
             continue;
@@ -165,7 +168,12 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             if (!tok)
                 break;
             if (tok->str() == "{") {
-                const bool initif = checkScopeForVariable(scope, tok->next(), var, membervar);
+                std::set<unsigned int> aliasesif(*aliases);
+                std::set<unsigned int> aliaseselse(*aliases);
+
+                const bool initif = checkScopeForVariable(scope, tok->next(), var, &aliasesif, membervar);
+                if (initif)
+                    aliasesif.clear();
 
                 // goto the }
                 tok = tok->link();
@@ -174,7 +182,9 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     // goto the {
                     tok = tok->tokAt(2);
 
-                    const bool initelse = checkScopeForVariable(scope, tok->next(), var, membervar);
+                    const bool initelse = checkScopeForVariable(scope, tok->next(), var, &aliaseselse, membervar);
+                    if (initelse)
+                        aliaseselse.clear();
 
                     // goto the }
                     tok = tok->link();
@@ -182,6 +192,9 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                     if (initif && initelse)
                         return true;
                 }
+
+                aliases->insert(aliasesif.begin(), aliasesif.end());
+                aliases->insert(aliaseselse.begin(), aliaseselse.end());
             }
         }
 
@@ -201,7 +214,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             // goto the {
             tok = tok->next()->link()->next();
 
-            checkScopeForVariable(scope, tok->next(), var, membervar);
+            checkScopeForVariable(scope, tok->next(), var, aliases, membervar);
 
             // goto the }
             tok = tok->link();
@@ -223,12 +236,12 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 bool def = false;
                 for (const Token *tok2 = tok->next(); tok2 != endTok; tok2 = tok2->next()) {
                     if (Token::Match(tok2, "case %any% :") &&
-                        !checkScopeForVariable(scope, tok2, var, membervar)) {
+                        !checkScopeForVariable(scope, tok2, var, aliases, membervar)) {
                         init = false;
                     }
                     if (Token::simpleMatch(tok2, "default :")) {
                         def = true;
-                        if (!checkScopeForVariable(scope, tok2, var, membervar))
+                        if (!checkScopeForVariable(scope, tok2, var, aliases, membervar))
                             init = false;
                     }
                 }
@@ -244,7 +257,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         if (Token::Match(tok, "return|break|continue|throw")) {
             while (tok && tok->str() != ";") {
                 // variable is seen..
-                if (tok->varId() == var.varId()) {
+                if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
                     if (!membervar.empty()) {
                         if (Token::Match(tok, "%var% . %var% ;|%cop%") && tok->strAt(2) == membervar)
                             uninitStructMemberError(tok, tok->str() + "." + membervar);
@@ -280,7 +293,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             // Warn if variable is used anywhere in the scope. Assumes that execution
             // runs wildly.
             for (tok2 = Token::findsimplematch(var.typeEndToken(), ";"); tok2 != endToken; tok2 = tok2->next()) {
-                if (tok2->varId() == var.varId()) {
+                if (tok2->varId() == var.varId() || (tok2->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
                     bool assign = false;
 
                     if (!membervar.empty()) {
@@ -289,7 +302,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                         else if (isMemberVariableUsage(tok2, var.isPointer(), membervar))
                             uninitStructMemberError(tok2, tok2->str() + "." + membervar);
                     } else {
-                        if (isVariableAssignment(tok2, var.isPointer(), true))
+                        if (isVariableAssignment(tok2, var.isPointer(), tok2->varId() != var.varId(), true))
                             assign = true;
 
                         // Use variable
@@ -313,7 +326,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         }
 
         // variable is seen..
-        if (tok->varId() == var.varId()) {
+        if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
             if (!membervar.empty()) {
                 if (isMemberVariableAssignment(tok, membervar))
                     return true;
@@ -321,8 +334,24 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
-                if (isVariableAssignment(tok, var.isPointer(), true))
+                if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.varId(), true))
                     return true;
+
+                if (Token::Match(tok->tokAt(-4), "[;{}] %var% = & %var% ;")) {
+                    const Variable *var1 = _tokenizer->getSymbolDatabase()->getVariableFromVarId(tok->tokAt(-3)->varId());
+                    if (var1 && var1->isPointer()) {
+                        aliases->insert(var1->varId());
+                        continue;
+                    }
+                }
+
+                else if (var.isArray() && Token::Match(tok->tokAt(-3), "[;{}] %var% = %var% ;")) {
+                    const Variable *var1 = _tokenizer->getSymbolDatabase()->getVariableFromVarId(tok->tokAt(-2)->varId());
+                    if (var1 && var1->isPointer()) {
+                        aliases->insert(var1->varId());
+                        continue;
+                    }
+                }
 
                 // Use variable
                 if (isVariableUsage(tok, var.isPointer()))
@@ -359,10 +388,12 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
     return false;
 }
 
-bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool full)
+bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool alias, bool full)
 {
     // assign _whole_ var/array/struct
-    if (Token::Match(vartok->previous(), "[;{}=] %var% ="))
+    if (!alias && Token::Match(vartok->previous(), "[;{}=] %var% ="))
+        return true;
+    else if (alias && Token::Match(vartok->tokAt(-2), "[;{}=] * %var% ="))
         return true;
     else if (Token::Match(vartok->tokAt(-2), "va_start ( %var% ,"))
         return true;
@@ -385,7 +416,7 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
 
 bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
 {
-    if (isVariableAssignment(vartok, pointer, false))
+    if (isVariableAssignment(vartok, pointer, false, false))
         return false;
     return true;
 }

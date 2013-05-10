@@ -117,22 +117,32 @@ void LintUninitVar::checkScope(const Scope* scope)
             continue;
 
         std::set<unsigned int> aliases;
-        checkScopeForVariable(scope, tok, *i, &aliases, "");
 
-        if (Token::Match(i->typeStartToken(), "struct %type% %var% ;")) {
+        if (!Token::Match(i->typeStartToken(), "struct %type% %var% ;"))
+            checkScopeForVariable(scope, tok, *i, &aliases, "");
+        else {
             const std::string structname(i->typeStartToken()->next()->str());
             const SymbolDatabase * symbolDatabase = _tokenizer->getSymbolDatabase();
+            bool fullychecked = false; // is struct fully checked?
             for (std::size_t j = 0U; j < symbolDatabase->classAndStructScopes.size(); ++j) {
                 const Scope *scope2 = symbolDatabase->classAndStructScopes[j];
                 if (scope2->className == structname && scope2->numConstructors == 0U) {
+                    fullychecked = true;
                     for (std::list<Variable>::const_iterator it = scope2->varlist.begin(); it != scope2->varlist.end(); ++it) {
                         const Variable &var = *it;
-                        if (!var.isArray()) {
+                        if (var.isArray() || var.isClass()) // TODO: not handled well
+                            fullychecked = false;
+                        else {
                             aliases.clear();
                             checkScopeForVariable(scope, tok, *i, &aliases, var.name());
                         }
                     }
+                    break;
                 }
+            }
+            if (!fullychecked) {
+                aliases.clear();
+                checkScopeForVariable(scope, tok, *i, &aliases, "");
             }
         }
     }

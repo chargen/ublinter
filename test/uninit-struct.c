@@ -36,3 +36,30 @@ void struct6()
      if (p->a == 2) {} // BAD
 }
 
+struct XY {
+    int x;
+    int y;
+};
+
+struct XYZ {
+    struct XY xy;
+    int z;
+};
+
+struct XY knownstruct1()
+{
+    struct XY xy;
+    xy.x = 1;
+    xy.y = 2;
+    return xy; // OK
+}
+
+struct XYZ knownstruct2()
+{
+    struct XYZ xyz;
+    xyz.z = 1;
+    return xyz; // BAD
+}
+
+
+

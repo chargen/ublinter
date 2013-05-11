@@ -1,6 +1,4 @@
 
-// Please place test cases in alphabetical order
-
 int if1(int a)
 {
     int x;

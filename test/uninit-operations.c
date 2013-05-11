@@ -45,10 +45,21 @@ void xor()
     x = x ^ 2; // BAD
 }
 
+void shl()
+{
+    int x;
+    x = x << 1; // BAD
+}
+
+void shr()
+{
+    int x;
+    x = x >> 1; // BAD
+}
+
 void function_call()
 {
     int x;
     x = f(x); // BAD
 }
-
 

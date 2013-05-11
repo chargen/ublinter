@@ -40,7 +40,7 @@ static const char ExtraVersion[] = "";
 static TimerResults S_timerResults;
 
 CppCheck::CppCheck(ErrorLogger &errorLogger, bool useGlobalSuppressions)
-    : _errorLogger(errorLogger), exitcode(0), _useGlobalSuppressions(useGlobalSuppressions), tooManyConfigs(false)
+    : _errorLogger(errorLogger), exitcode(0), _useGlobalSuppressions(useGlobalSuppressions), tooManyConfigs(false), _simplify(true)
 {
 }
 
@@ -210,9 +210,9 @@ unsigned int CppCheck::processFile(const std::string& filename)
             }
         }
     } catch (const std::runtime_error &e) {
-        // Exception was thrown when checking this file..
-        const std::string fixedpath = Path::toNativeSeparators(filename);
-        _errorLogger.reportOut("Bailing out from checking " + fixedpath + ": " + e.what());
+        internalError(filename, e.what());
+    } catch (const InternalError &e) {
+        internalError(filename, e.errorMessage);
     }
 
     if (!_settings._errorsOnly)
@@ -222,6 +222,29 @@ unsigned int CppCheck::processFile(const std::string& filename)
     return exitcode;
 }
 
+void CppCheck::internalError(const std::string &filename, const std::string &msg)
+{
+    const std::string fixedpath = Path::toNativeSeparators(filename);
+    const std::string fullmsg("Bailing out from checking " + fixedpath + " since there was a internal error: " + msg);
+
+    if (_settings.isEnabled("information")) {
+        const ErrorLogger::ErrorMessage::FileLocation loc1(filename, 0);
+        std::list<ErrorLogger::ErrorMessage::FileLocation> callstack;
+        callstack.push_back(loc1);
+
+        ErrorLogger::ErrorMessage errmsg(callstack,
+                                         Severity::information,
+                                         fullmsg,
+                                         "internalError",
+                                         false);
+
+        _errorLogger.reportErr(errmsg);
+
+    } else {
+        // Report on stdout
+        _errorLogger.reportOut(fullmsg);
+    }
+}
 
 
 void CppCheck::checkFunctionUsage()
@@ -314,6 +337,9 @@ void CppCheck::checkFile(const std::string &code, const char FileName[])
 
         if (_settings.isEnabled("unusedFunction") && _settings._jobs == 1)
             _checkUnusedFunctions.parseTokens(_tokenizer);
+
+        if (!_simplify)
+            return;
 
         Timer timer3("Tokenizer::simplifyTokenList", _settings._showtime, &S_timerResults);
         result = _tokenizer.simplifyTokenList();

@@ -15,6 +15,7 @@ public:
         : ErrorLogger()
         , cppcheck(*this,false) {
         cppcheck.settings() = settings;
+        cppcheck.dontSimplify();
     }
 
     void check(const std::string &filename) {

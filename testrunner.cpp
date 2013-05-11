@@ -18,6 +18,7 @@ public:
         : ErrorLogger()
         , cppcheck(*this,false)
         , fail(0) {
+        cppcheck.dontSimplify();
     }
 
     int test(const std::string &filename) {

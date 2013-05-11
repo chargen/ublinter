@@ -303,7 +303,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             // Warn if variable is used anywhere in the scope. Assumes that execution
             // runs wildly.
             for (tok2 = Token::findsimplematch(var.typeEndToken(), ";"); tok2 != endToken; tok2 = tok2->next()) {
-                if (tok2->varId() == var.varId() || (tok2->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
+                if (tok2->varId() == var.varId() || aliases->find(tok->varId()) != aliases->end()) {
                     bool assign = false;
 
                     if (!membervar.empty()) {
@@ -336,16 +336,23 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         }
 
         // variable is seen..
-        if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
+        if (tok->varId() == var.varId() || aliases->find(tok->varId()) != aliases->end()) {
             if (!membervar.empty()) {
                 if (isMemberVariableAssignment(tok, membervar))
+                    // TODO, is member variable used in rhs?
                     return true;
 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
-                if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.varId(), true))
+                if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.varId(), true)) {
+                    // Look if variable is used in rhs
+                    for (const Token *tok2 = tok->next(); tok2 && tok2->str() != ";"; tok2 = tok2->next()) {
+                        if (tok2->varId() == var.varId() || aliases->find(tok2->varId()) != aliases->end())
+                            uninitvarError(tok2, tok2->str());
+                    }
                     return true;
+                }
 
                 if (Token::Match(tok->tokAt(-4), "[;{}] %var% = & %var% ;")) {
                     const Variable *var1 = _tokenizer->getSymbolDatabase()->getVariableFromVarId(tok->tokAt(-3)->varId());
@@ -377,7 +384,7 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
 {
     const Token * const endpar = startparentheses->link();
     for (const Token *tok = startparentheses->next(); tok && tok != endpar; tok = tok->next()) {
-        if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases.find(tok->varId()) != aliases.end())) {
+        if (tok->varId() == var.varId() || aliases.find(tok->varId()) != aliases.end()) {
             if (Token::Match(tok, "%var% . %var%")) {
                 if (tok->strAt(2) == membervar) {
                     if (isMemberVariableAssignment(tok, membervar))

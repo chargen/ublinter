@@ -61,5 +61,17 @@ struct XYZ knownstruct2()
     return xyz; // BAD
 }
 
+struct XYZ knownstruct3()
+{
+    struct XYZ xyz;
+    xyz.z = xyz.z + 1; // BAD
+}
 
+struct XYZ knownstruct3()
+{
+    // TODO: warn about 'int x = *p;' instead.
+    struct XYZ xyz;
+    int *p = &xyz.z; // BAD
+    int z = *p;
+}
 

@@ -57,9 +57,45 @@ void shr()
     x = x >> 1; // BAD
 }
 
+void eq()
+{
+    int x;
+    if (x==4) {} // BAD
+}
+
+void ne()
+{
+    int x;
+    if (x!=4) {} // BAD
+}
+
+void gt()
+{
+    int x;
+    if (x>4) {} // BAD
+}
+
+void ge()
+{
+    int x;
+    if (x>=4) {} // BAD
+}
+
+void lt()
+{
+    int x;
+    if (x<4) {} // BAD
+}
+
+void le()
+{
+    int x;
+    if (x<=4) {} // BAD
+}
+
 void function_call()
 {
     int x;
-    x = f(x); // BAD
+    f(x); // BAD
 }
 

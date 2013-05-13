@@ -36,6 +36,20 @@ void struct6()
      if (p->a == 2) {} // BAD
 }
 
+void memset1()
+{
+    struct ABC abc;
+    memset(&abc, 0, sizeof(abc));
+    do_something(abc);
+}
+
+void memset2()
+{
+    struct ABC abc;
+    memset(&abc, 0, sizeof abc);
+    do_something(abc);
+}
+
 struct XY {
     int x;
     int y;

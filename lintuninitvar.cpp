@@ -347,8 +347,11 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             } else {
                 if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.varId(), true)) {
                     // Look if variable is used in rhs
+                    bool rhs = false;
                     for (const Token *tok2 = tok->next(); tok2 && tok2->str() != ";"; tok2 = tok2->next()) {
-                        if (tok2->varId() == var.varId() || aliases->find(tok2->varId()) != aliases->end())
+                        if (tok2->str() == "=")
+                            rhs = true;
+                        else if (rhs && (tok2->varId() == var.varId() || aliases->find(tok2->varId()) != aliases->end()))
                             uninitvarError(tok2, tok2->str());
                     }
                     return true;
@@ -416,7 +419,9 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
         return true;
     else if (Token::Match(vartok->tokAt(-2), "va_start ( %var% ,"))
         return true;
-    else if (Token::Match(vartok->tokAt(-3), "memset ( & %var% , 0 , sizeof ( %varid% ) )", vartok->varId()))
+    else if (Token::Match(vartok->tokAt(-3), "memset ( & %var% , 0 , sizeof ( %varid% ) ) ;", vartok->varId()))
+        return true;
+    else if (Token::Match(vartok->tokAt(-3), "memset ( & %var% , 0 , sizeof %varid% ) ;", vartok->varId()))
         return true;
 
     // assigning part of array/struct

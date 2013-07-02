@@ -10,6 +10,7 @@ endif (WIN32 AND NOT CYGWIN)
 set(CMAKE_BUILD_TYPE Debug)
 
 set(SRCS
+    lintsignedvar.cpp
     lintuninitvar.cpp
     externals/cppcheck/cppcheck.cpp
     externals/cppcheck/errorlogger.cpp

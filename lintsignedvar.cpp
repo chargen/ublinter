@@ -82,6 +82,14 @@ bool badop(const Token *tok)
             tok->str() == ">>");
 }
 
+static bool isSigned(const Variable &var)
+{
+    bool s = false;
+    for (const Token *decl = var.typeStartToken(); decl != var.nameToken(); decl = decl->next())
+        s |= (Token::Match(decl,"char|short|int|long") && !decl->isUnsigned());
+	return s;
+}
+
 void LintSignedVar::check()
 {
     const SymbolDatabase *symbolDatabase = _tokenizer->getSymbolDatabase();
@@ -101,11 +109,8 @@ void LintSignedVar::check()
 
             if (function) {
                 for (unsigned int arg = 0; arg < function->argCount(); ++arg) {
-                    bool isSigned = false;
                     const Variable *variable = function->getArgumentVar(arg);
-                    for (const Token *decl = variable->typeStartToken(); decl && decl->str() != "," && decl->str() != ")"; decl = decl->next())
-                        isSigned |= (decl->isStandardType() && !decl->isUnsigned());
-                    if (isSigned)
+                    if (isSigned(*variable))
                         signedVariables.insert(variable->varId());
                 }
             }
@@ -113,10 +118,7 @@ void LintSignedVar::check()
 
         // Get signed variables..
         for (std::list<Variable>::const_iterator var = scope->varlist.begin(); var != scope->varlist.end(); ++var) {
-            bool isSigned = false;
-            for (const Token *decl = var->typeStartToken(); decl && decl->str() != ";"; decl = decl->next())
-                isSigned |= (decl->isStandardType() && !decl->isUnsigned());
-            if (isSigned)
+            if (isSigned(*var))
                 signedVariables.insert(var->varId());
         }
 

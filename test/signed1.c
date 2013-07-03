@@ -21,5 +21,25 @@ void f(int par) {
     int y = par & 2; // BAD
 }
 
+void types() {
+    int array[123];
 
+    char   c = x;
+    array[c] = 0; // BAD
+
+    short  s = x;
+    array[s] = 0; // BAD
+
+    int    i = x;
+    array[i] = 0; // BAD
+
+    long   l = x;
+    array[l] = 0; // BAD
+
+    float  f = x;
+    sqrtf(f); // OK
+
+    double d = x;
+    sqrtf(d); // OK
+}
 

@@ -27,13 +27,13 @@
 class LintSignedVar : public Check {
 public:
     /** @brief This constructor is used when registering the LintSignedVar */
-    LintSignedVar() : Check(myName())
-    { }
+    LintSignedVar() : Check(myName()) {
+    }
 
     /** @brief This constructor is used when running checks. */
     LintSignedVar(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger)
-        : Check(myName(), tokenizer, settings, errorLogger)
-    { }
+        : Check(myName(), tokenizer, settings, errorLogger) {
+    }
 
     /** @brief Run checks against the normal token list */
     void runChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
@@ -87,7 +87,7 @@ static bool isSigned(const Variable &var)
     bool s = false;
     for (const Token *decl = var.typeStartToken(); decl != var.nameToken(); decl = decl->next())
         s |= (Token::Match(decl,"char|short|int|long") && !decl->isUnsigned());
-	return s;
+    return s;
 }
 
 void LintSignedVar::check()

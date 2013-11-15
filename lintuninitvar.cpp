@@ -32,13 +32,13 @@ class Variable;
 class LintUninitVar : public Check {
 public:
     /** @brief This constructor is used when registering the LintUninitVar */
-    LintUninitVar() : Check(myName())
-    { }
+    LintUninitVar() : Check(myName()) {
+    }
 
     /** @brief This constructor is used when running checks. */
     LintUninitVar(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger)
-        : Check(myName(), tokenizer, settings, errorLogger)
-    { }
+        : Check(myName(), tokenizer, settings, errorLogger) {
+    }
 
     /** @brief Run checks against the normal token list */
     void runChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {

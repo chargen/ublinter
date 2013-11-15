@@ -2,6 +2,7 @@ void struct1()
 {
     struct X x;
     x.y = 0; // OK
+    x.y.z = 0; // OK
 }
 
 void struct2()

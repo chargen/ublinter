@@ -425,7 +425,10 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
         return true;
 
     // assigning part of array/struct
-    if (!full && !pointer && Token::Match(vartok->previous(), "[;{}=] %var% . %var% ="))
+    const Token *endtok = vartok;
+    while (Token::Match(endtok, "%var% . %var%"))
+        endtok = endtok->tokAt(2);
+    if (!full && !pointer && Token::Match(vartok->previous(), "[;{}=] %var% .") && Token::Match(endtok, "%var% ="))
         return true;
     if (!full && Token::Match(vartok->previous(), "[;{}] %var% [")) {
         const Token *tok2 = vartok->next();

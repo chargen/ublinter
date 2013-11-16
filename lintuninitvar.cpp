@@ -450,22 +450,28 @@ bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
 
 bool LintUninitVar::isMemberVariableAssignment(const Token *tok, const std::string &membervar) const
 {
-    if (Token::Match(tok, "%var% . %var%") && tok->strAt(2) == membervar) {
-        if (Token::Match(tok->tokAt(3), "[=.[]"))
-            return true;
-        else if (Token::Match(tok->tokAt(-2), "[(,=] &"))
-            return true;
-        else if ((tok->previous() && tok->previous()->isConstOp()) || Token::Match(tok->previous(), "[|="))
-            ; // member variable usage
-        else if (tok->tokAt(3)->isConstOp())
-            ; // member variable usage
-        else
-            return true;
-    } else if (tok->strAt(1) == "=")
-        return true;
-    else if (tok->strAt(-1) == "&")
-        return true;
-    return false;
+    unsigned int varid = 0;
+    const Token *rhs = 0;
+
+    if (Token::Match(tok, "%var% . %var% =") && tok->strAt(2) == membervar) {
+        varid = tok->tokAt(2)->varId();
+        rhs = tok->tokAt(4);
+    } else if (Token::Match(tok, "%var% =")) {
+        varid = tok->varId();
+        rhs = tok->tokAt(2);
+    } else {
+        return false;
+    }
+
+    // If variable is used in rhs return false
+    while (rhs && rhs->str() != ";") {
+        if (rhs->varId() == varid)
+            return false;
+        rhs = rhs->next();
+    }
+
+    // variable is assigned and not used in rhs => return true
+    return true;
 }
 
 bool LintUninitVar::isMemberVariableUsage(const Token *tok, bool isPointer, const std::string &membervar) const

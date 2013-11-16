@@ -90,3 +90,13 @@ struct XYZ knownstruct3()
     int z = *p;
 }
 
+
+void anonymous() {
+  char buf[10];
+  struct { int x; int y; } xy1, xy2, xy3, xy4, xy5;
+  xy1.x = xy1.x + 1; // BAD
+  buf[xy2.x] = 0; // BAD
+  if (xy3.x > 5) {} // BAD
+  func(xy4.x > 5); // BAD
+  func(xy5.x); // BAD
+}

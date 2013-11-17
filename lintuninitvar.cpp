@@ -424,6 +424,41 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
     else if (Token::Match(vartok->tokAt(-3), "memset ( & %var% , 0 , sizeof %varid% ) ;", vartok->varId()))
         return true;
 
+    else if (Token::Match(vartok->tokAt(-2), "[(,] & %var% [,)]")) {
+        // initialization by function?
+        unsigned int argnr = 0U;
+        const Token *ftok = vartok;
+        while (NULL != (ftok = ftok->previous())) {
+            if (Token::Match(ftok, "[)]]"))
+                ftok = ftok->link();
+            else if (ftok->str() == ",")
+                argnr++;
+            else if (ftok->str() == "(")
+                break;
+        }
+        if (ftok && Token::Match(ftok->previous(), "%var% (")) {
+            ftok = ftok->previous();
+            const Function *function = ftok->function();
+            const Scope *scope  = function ? function->functionScope : NULL;
+            const Variable *arg = function ? function->getArgumentVar(argnr) : NULL;
+            if (!Token::Match(arg->typeStartToken(), "%type% * const| %var% [,)]"))
+                return false;
+            int indentlevel = 0;
+            for (const Token *tok2 = scope ? scope->classStart : NULL; tok2 && tok2 != scope->classEnd; tok2 = tok2->next()) {
+                if (tok2->str() == "{")
+                    ++indentlevel;
+                else if (tok2->str() == "}")
+                    --indentlevel;
+                else if (tok2->varId() == arg->varId()) {
+                    if (indentlevel == 1 && Token::Match(tok2->previous(),"[;{}] * %var% ="))
+                        return true;
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
     // assigning part of array/struct
     const Token *endtok = vartok;
     while (Token::Match(endtok, "%var% . %var%"))

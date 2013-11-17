@@ -51,17 +51,17 @@ Compiling
 
 You should be able to use almost any C++ compiler to compile ublinter.
 
-Basically you just use:
+Linux:
 
-    cmake .
     make
 
-If that doesn't work well, you might need to tell cmake what generator to use. Execute cmake without parameters. cmake will then write help. look at the bottom of this help, there the generators are listed. Pick the generator that suits you best, for instance "MinGW Makefiles" and then try:
+Windows:
 
-    cmake -G"MinGW Makefiles" .
-    make
+    make LDFLAGS=-lshlwapi
 
-Manual compilation with g++ (the "-lshlwapi" at the end is necessary if you compile in windows):
+Flags:
 
-    g++ -o ublinter -I. -Iexternals/cppcheck main.cpp lintuninitvar.cpp externals/cppcheck/*.cpp -lshlwapi
-
+    CXX      : Compiler
+    CXXFLAGS : Compiler flags
+    CPPFLAGS : Preprocessor flags (include folders etc)
+    LDFLAGS  : Linker flags

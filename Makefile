@@ -29,9 +29,9 @@ EXTOBJ = externals/cppcheck/errorlogger.o \
          externals/cppcheck/token.o
 
 ublinter: main.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ)
-	$(CXX) $(CXXFLAGS) -o cppcheck main.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o ublinter main.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
 
-all: cppcheck testrunner
+all: ublinter testrunner
 
 testrunner: testrunner.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ)
 	$(CXX) $(CXXFLAGS) -o testrunner  testrunner.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)

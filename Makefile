@@ -28,13 +28,13 @@ EXTOBJ = externals/cppcheck/errorlogger.o \
          externals/cppcheck/path.o \
          externals/cppcheck/token.o
 
-ublinter: main.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ)
-	$(CXX) $(CXXFLAGS) -o ublinter main.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
+ublinter: main.o lintdivision.o lintuninitvar.o $(EXTOBJ)
+	$(CXX) $(CXXFLAGS) -o ublinter main.o lintdivision.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
 
 all: ublinter testrunner
 
-testrunner: testrunner.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ)
-	$(CXX) $(CXXFLAGS) -o testrunner  testrunner.o lintdivision.o lintsignedvar.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
+testrunner: testrunner.o lintdivision.o lintuninitvar.o $(EXTOBJ)
+	$(CXX) $(CXXFLAGS) -o testrunner  testrunner.o lintdivision.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
 
 test: all
 	./testrunner
@@ -44,9 +44,6 @@ clean:
 
 lintdivision.o: lintdivision.cpp *.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c lintdivision.cpp
-
-lintsignedvar.o: lintsignedvar.cpp *.h
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c lintsignedvar.cpp
 
 lintuninitvar.o: lintuninitvar.cpp *.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c lintuninitvar.cpp

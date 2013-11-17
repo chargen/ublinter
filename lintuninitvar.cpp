@@ -450,8 +450,14 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
                 else if (tok2->str() == "}")
                     --indentlevel;
                 else if (tok2->varId() == arg->varId()) {
-                    if (indentlevel == 1 && Token::Match(tok2->previous(),"[;{}] * %var% ="))
+                    if (indentlevel == 1 && Token::Match(tok2->tokAt(-2),"[;{}] * %var% =")) {
+                        // Make sure RHS doesn't contain variable
+                        for (const Token *rhs = tok2->next(); rhs; rhs = rhs->next()) {
+                            if (rhs->varId() == tok2->varId())
+                                return false;
+                        }
                         return true;
+                    }
                     return false;
                 }
             }

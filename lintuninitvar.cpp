@@ -441,10 +441,12 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
             const Function *function = ftok->function();
             const Scope *scope  = function ? function->functionScope : NULL;
             const Variable *arg = function ? function->getArgumentVar(argnr) : NULL;
+            if (!scope || !arg)
+                return false;
             if (!Token::Match(arg->typeStartToken(), "%type% * const| %var% [,)]"))
                 return false;
             int indentlevel = 0;
-            for (const Token *tok2 = scope ? scope->classStart : NULL; tok2 && tok2 != scope->classEnd; tok2 = tok2->next()) {
+            for (const Token *tok2 = scope->classStart; tok2 && tok2 != scope->classEnd; tok2 = tok2->next()) {
                 if (tok2->str() == "{")
                     ++indentlevel;
                 else if (tok2->str() == "}")

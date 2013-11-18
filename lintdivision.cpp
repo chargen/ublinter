@@ -73,7 +73,9 @@ void LintDivision::check()
             continue;
 
         // ok if second operator is non-zero
-        const std::string second = tok->next() ? tok->strAt(1) : "";
+        std::string second = tok->next() ? tok->strAt(1) : "";
+        if (Token::Match(tok->next(), "( float ) %num%"))
+            second = tok->strAt(4);
         if (MathLib::isInt(second) && second != "0")
             continue;
         if (MathLib::isFloat(second)) {

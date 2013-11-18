@@ -30,7 +30,7 @@ public:
             std::string str;
             int linenr = 1;
             while (std::getline(fin,str)) {
-                if (str.find("BAD") != std::string::npos)
+                if (str.find("BAD") != std::string::npos || str.find("FP") != std::string::npos)
                     lines.insert(linenr);
                 linenr++;
             }

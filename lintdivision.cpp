@@ -74,6 +74,8 @@ void LintDivision::check()
 
         // ok if second operator is non-zero
         std::string second = tok->next() ? tok->strAt(1) : "";
+        if (second == "sizeof")
+            continue;
         if (Token::Match(tok->next(), "( float ) %num%"))
             second = tok->strAt(4);
         if (MathLib::isInt(second) && second != "0")

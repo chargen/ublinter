@@ -76,8 +76,13 @@ void LintDivision::check()
         std::string second = tok->next() ? tok->strAt(1) : "";
         if (second == "sizeof")
             continue;
-        if (Token::Match(tok->next(), "( float ) %num%"))
-            second = tok->strAt(4);
+        if (Token::Match(tok->next(),"( %type% ) %num%")) {
+            const Token* numtok = tok->tokAt(4);
+            if (Token::Match(tok->next(), "( float ) %num%"))
+                second = tok->strAt(4);
+            else if (MathLib::isInt(numtok->str()) && 0 != (0xFF & MathLib::toLongNumber(numtok->str())))
+                continue;
+        }
         if (MathLib::isInt(second) && second != "0")
             continue;
         if (MathLib::isFloat(second)) {

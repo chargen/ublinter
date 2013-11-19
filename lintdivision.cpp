@@ -83,6 +83,8 @@ void LintDivision::check()
             else if (MathLib::isInt(numtok->str()) && 0 != (0xFF & MathLib::toLongNumber(numtok->str())))
                 continue;
         }
+        if (Token::Match(tok->next(), "( %num% )"))
+            second = tok->strAt(2);
         if (MathLib::isInt(second) && second != "0")
             continue;
         if (MathLib::isFloat(second)) {

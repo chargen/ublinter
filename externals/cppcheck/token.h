@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TokenH
-#define TokenH
+//---------------------------------------------------------------------------
+#ifndef tokenH
+#define tokenH
+//---------------------------------------------------------------------------
 
 #include <string>
 #include <vector>
@@ -261,20 +263,26 @@ public:
     void isLong(bool size) {
         _isLong = size;
     }
-    bool isUnused() const {
-        return _isUnused;
-    }
-    void isUnused(bool used) {
-        _isUnused = used;
-    }
     bool isStandardType() const {
         return _isStandardType;
     }
     bool isExpandedMacro() const {
         return _isExpandedMacro;
     }
-    void setExpandedMacro(bool m) {
+    void isExpandedMacro(bool m) {
         _isExpandedMacro = m;
+    }
+    bool isAttributeConstructor() const {
+        return _isAttributeConstructor;
+    }
+    void isAttributeConstructor(bool ac) {
+        _isAttributeConstructor = ac;
+    }
+    bool isAttributeUnused() const {
+        return _isAttributeUnused;
+    }
+    void isAttributeUnused(bool unused) {
+        _isAttributeUnused = unused;
     }
 
     static const Token *findsimplematch(const Token *tok, const char pattern[]);
@@ -346,6 +354,8 @@ public:
      * the first one on the tokens list.
      */
     void insertToken(const std::string &tokenStr, bool prepend=false);
+
+    void insertToken(const std::string &tokenStr, const std::string &originalNameStr, bool prepend=false);
 
     Token *previous() const {
         return _previous;
@@ -546,15 +556,23 @@ public:
     /**
      * Returns the closing bracket of opening '<'. Should only be used if link()
      * is unavailable.
-     * @param closing The closing token is stored in that parameter
-     * @return success
+     * @return closing '>', ')', ']' or '}'. if no closing bracket is found, NULL is returned
      */
-    bool findClosingBracket(const Token*& closing) const;
-    bool findClosingBracket(Token*& closing) const {
-        const Token* tok;
-        bool retVal = findClosingBracket(tok);
-        closing = const_cast<Token*>(tok);
-        return retVal;
+    const Token* findClosingBracket() const;
+    Token* findClosingBracket();
+
+    /**
+     * Returns the original name.
+     */
+    const std::string & originalName() const {
+        return _originalName;
+    }
+
+    /**
+     * Sets the original name.
+     */
+    void originalName(const std::string & name) {
+        _originalName = name;
     }
 
 private:
@@ -614,9 +632,10 @@ private:
     bool _isSigned;
     bool _isPointerCompare;
     bool _isLong;
-    bool _isUnused;
     bool _isStandardType;
     bool _isExpandedMacro;
+    bool _isAttributeConstructor;  // __attribute__((constructor))
+    bool _isAttributeUnused;       // __attribute__((unused))
 
     /** Updates internal property cache like _isName or _isBoolean.
         Called after any _str() modification. */
@@ -629,11 +648,13 @@ private:
     Token *_astOperand1;
     Token *_astOperand2;
     Token *_astParent;
+
+    // original name like size_t
+    std::string _originalName;
+
 public:
     void astOperand1(Token *tok);
     void astOperand2(Token *tok);
-    void astFunctionCall();
-    void astHandleParentheses();
 
     const Token * astOperand1() const {
         return _astOperand1;
@@ -648,16 +669,22 @@ public:
         return ret;
     }
 
-    std::string astString() const {
+    void clearAst() {
+        _astOperand1 = _astOperand2 = _astParent = NULL;
+    }
+
+    std::string astString(const char *sep = "") const {
         std::string ret;
         if (_astOperand1)
-            ret = _astOperand1->astString();
+            ret = _astOperand1->astString(sep);
         if (_astOperand2)
-            ret += _astOperand2->astString();
-        return ret+_str;
+            ret += _astOperand2->astString(sep);
+        return ret + sep + _str;
     }
+
+    void printAst() const;
 };
 
 /// @}
-
-#endif // TokenH
+//---------------------------------------------------------------------------
+#endif // tokenH

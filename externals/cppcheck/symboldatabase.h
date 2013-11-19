@@ -17,8 +17,8 @@
  */
 
 //---------------------------------------------------------------------------
-#ifndef SymbolDatabaseH
-#define SymbolDatabaseH
+#ifndef symboldatabaseH
+#define symboldatabaseH
 //---------------------------------------------------------------------------
 
 #include <string>
@@ -166,6 +166,10 @@ public:
 
     /**
      * Get type start token.
+     * The type start token doesn't account 'static' and 'const' qualifiers
+     * E.g.:
+     *     static const int * const p = ...;
+     * type start token ^
      * @return type start token
      */
     const Token *typeStartToken() const {
@@ -174,6 +178,10 @@ public:
 
     /**
      * Get type end token.
+     * The type end token doesn't account the forward 'const' qualifier
+     * E.g.:
+     *     static const int * const p = ...;
+     *       type end token ^
      * @return type end token
      */
     const Token *typeEndToken() const {
@@ -195,10 +203,10 @@ public:
     }
 
     /**
-     * Get variable ID.
-     * @return variable ID
+     * Get declaration ID (varId used for variable in its declaration).
+     * @return declaration ID
      */
-    unsigned int varId() const {
+    unsigned int declarationId() const {
         // name may not exist for function arguments
         if (_name)
             return _name->varId();
@@ -335,6 +343,14 @@ public:
     }
 
     /**
+     * Is array or pointer variable.
+     * @return true if pointer or array, false otherwise
+     */
+    bool isArrayOrPointer() const {
+        return getFlag(fIsArray) || getFlag(fIsPointer);
+    }
+
+    /**
      * Is reference variable.
      * @return true if reference, false otherwise
      */
@@ -398,7 +414,26 @@ public:
         return _dimensions[index_].num;
     }
 
+    /**
+     * Get array dimension known.
+     * @return length of dimension known
+     */
+    bool dimensionKnown(std::size_t index_) const {
+        return _dimensions[index_].known;
+    }
+
 private:
+    // only symbol database can change the type
+    friend class SymbolDatabase;
+
+    /**
+     * Set Type pointer to known type.
+     * @param t type
+     */
+    void type(const Type * t) {
+        _type = t;
+    }
+
     /** @brief variable name token */
     const Token *_name;
 
@@ -439,6 +474,8 @@ public:
           argDef(NULL),
           token(NULL),
           arg(NULL),
+          retDef(NULL),
+          retType(NULL),
           functionScope(NULL),
           nestedIn(NULL),
           initArgCount(0),
@@ -490,6 +527,8 @@ public:
     const Token *argDef;   // function argument start '(' in class definition
     const Token *token;    // function name token in implementation
     const Token *arg;      // function argument start '('
+    const Token *retDef;   // function return type token
+    const ::Type *retType; // function return type
     const Scope *functionScope; // scope of function body
     const Scope* nestedIn; // Scope the function is declared in
     std::list<Variable> argumentList; // argument list
@@ -719,10 +758,11 @@ private:
     friend class Scope;
 
     void addClassFunction(Scope **info, const Token **tok, const Token *argStart);
-    Function *addGlobalFunctionDecl(Scope*& scope, const Token *argStart, const Token* funcStart);
+    Function *addGlobalFunctionDecl(Scope*& scope, const Token* tok, const Token *argStart, const Token* funcStart);
     Function *addGlobalFunction(Scope*& scope, const Token*& tok, const Token *argStart, const Token* funcStart);
     void addNewFunction(Scope **info, const Token **tok);
     static bool isFunction(const Token *tok, const Scope* outerScope, const Token **funcStart, const Token **argStart);
+    const Type *findTypeInNested(const Token *tok, const Scope *startScope) const;
 
     const Tokenizer *_tokenizer;
     const Settings *_settings;
@@ -730,6 +770,9 @@ private:
 
     /** variable symbol table */
     std::vector<const Variable *> _variableList;
-};
 
-#endif
+    /** list for missing types */
+    std::list<Type> _blankTypes;
+};
+//---------------------------------------------------------------------------
+#endif // symboldatabaseH

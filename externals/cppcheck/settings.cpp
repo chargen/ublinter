@@ -26,7 +26,7 @@
 Settings::Settings()
     : _terminate(false),
       debug(false), debugwarnings(false), debugFalsePositive(false),
-      inconclusive(false), experimental(false),
+      ast(false), inconclusive(false), experimental(false),
       _errorsOnly(false),
       _inlineSuppressions(false),
       _verbose(false),
@@ -39,7 +39,8 @@ Settings::Settings()
       _maxConfigs(12),
       enforcedLang(None),
       reportProgress(false),
-      checkConfiguration(false)
+      checkConfiguration(false),
+      checkLibrary(false)
 {
     // This assumes the code you are checking is for the same architecture this is compiled on.
 #if defined(_WIN64)

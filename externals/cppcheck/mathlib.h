@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+//---------------------------------------------------------------------------
 #ifndef mathlibH
 #define mathlibH
+//---------------------------------------------------------------------------
 
 #include <string>
 #include <sstream>
@@ -34,13 +35,17 @@ public:
     typedef long long bigint;
 
     static bigint toLongNumber(const std::string & str);
-    static std::string longToString(const bigint value);
+    template<class T> static std::string toString(T value) {
+        std::ostringstream result;
+        result << value;
+        return result.str();
+    }
     static double toDoubleNumber(const std::string & str);
-    static std::string doubleToString(const double value);
 
     static bool isInt(const std::string & str);
     static bool isFloat(const std::string &str);
     static bool isNegative(const std::string &str);
+    static bool isPositive(const std::string &str);
     static bool isHex(const std::string& str);
     static bool isOct(const std::string& str);
     static bool isBin(const std::string& str);
@@ -71,6 +76,8 @@ public:
     static bool isOctalDigit(char c);
 };
 
-/// @}
+template<> CPPCHECKLIB std::string MathLib::toString(double value); // Declare specialization to avoid linker problems
 
-#endif
+/// @}
+//---------------------------------------------------------------------------
+#endif // mathlibH

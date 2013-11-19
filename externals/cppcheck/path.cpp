@@ -186,7 +186,7 @@ bool Path::isC(const std::string &path)
 {
     // In unix, ".C" is considered C++ file
     const std::string extension = getFilenameExtension(path);
-    return(extension == ".c");
+    return (extension == ".c");
 }
 
 bool Path::isCPP(const std::string &path)
@@ -203,12 +203,12 @@ bool Path::isCPP(const std::string &path)
     }
 
     // In unix, ".C" is considered C++ file
-    return(getFilenameExtension(path) == ".C");
+    return (getFilenameExtension(path) == ".C");
 }
 
-bool Path::acceptFile(const std::string &path)
+bool Path::acceptFile(const std::string &path, const std::set<std::string> &extra)
 {
-    return !Path::isHeader(path) && (Path::isCPP(path) || Path::isC(path));
+    return !Path::isHeader(path) && (Path::isCPP(path) || Path::isC(path) || extra.find(getFilenameExtension(path)) != extra.end());
 }
 
 bool Path::isHeader(const std::string &path)

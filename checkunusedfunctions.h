@@ -6,8 +6,8 @@
 
 class CheckUnusedFunctions {
 public:
-    void parseTokens(const Tokenizer &tokenizer) {}
-    void check(ErrorLogger * const errorLogger) {}
+    void parseTokens(Tokenizer &, const char*, Settings*) {}
+    void check(ErrorLogger * const) {}
 };
 
 #endif

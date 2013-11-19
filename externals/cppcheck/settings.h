@@ -16,14 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//---------------------------------------------------------------------------
 #ifndef settingsH
 #define settingsH
+//---------------------------------------------------------------------------
 
 #include <list>
 #include <vector>
 #include <string>
 #include <set>
 #include "config.h"
+#include "library.h"
 #include "suppressions.h"
 #include "standards.h"
 
@@ -58,6 +61,9 @@ public:
 
     /** @brief Is --debug-fp given? */
     bool debugFalsePositive;
+
+    /** @brief Experimental AST handling */
+    bool ast;
 
     /** @brief Inconclusive checks */
     bool inconclusive;
@@ -174,14 +180,19 @@ public:
     /** @brief --report-progress */
     bool reportProgress;
 
+    /** Library (--library) */
+    Library library;
+
     /** Rule */
     class CPPCHECKLIB Rule {
     public:
         Rule()
-            : id("rule") // default id
+            : tokenlist("simple") // use simple tokenlist
+            , id("rule")          // default id
             , severity("style") { // default severity
         }
 
+        std::string tokenlist;
         std::string pattern;
         std::string id;
         std::string severity;
@@ -195,6 +206,9 @@ public:
 
     /** Is the 'configuration checking' wanted? */
     bool checkConfiguration;
+
+    /** Check for incomplete info in library files? */
+    bool checkLibrary;
 
     /** Struct contains standards settings */
     Standards standards;
@@ -229,8 +243,18 @@ public:
 
     /** set the platform type for user specified platforms */
     bool platformFile(const std::string &filename);
+
+    /**
+     * @brief Returns true if platform type is Windows
+     * @return true if Windows platform type.
+     */
+    bool isWindowsPlatform() const {
+        return platformType == Win32A ||
+               platformType == Win32W ||
+               platformType == Win64;
+    }
 };
 
 /// @}
-
-#endif // SETTINGS_H
+//---------------------------------------------------------------------------
+#endif // settingsH

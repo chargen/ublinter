@@ -214,7 +214,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
 
         // for/while..
         if (Token::Match(tok, "for|while (")) {
-            if (membervar.empty() && Token::Match(tok, "for ( %varid% =", var.varId()))
+            if (membervar.empty() && Token::Match(tok, "for ( %varid% =", var.declarationId()))
                 return true;
 
             // is variable initialized in for-head (don't report errors yet)?
@@ -267,7 +267,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         if (Token::Match(tok, "return|break|continue|throw")) {
             while (tok && tok->str() != ";") {
                 // variable is seen..
-                if (tok->varId() == var.varId() || (tok->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
+                if (tok->varId() == var.declarationId() || (tok->varId() > 0U && aliases->find(tok->varId()) != aliases->end())) {
                     if (!membervar.empty()) {
                         if (Token::Match(tok, "%var% . %var% ;|%cop%") && tok->strAt(2) == membervar)
                             uninitStructMemberError(tok, tok->str() + "." + membervar);
@@ -303,7 +303,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
             // Warn if variable is used anywhere in the scope. Assumes that execution
             // runs wildly.
             for (tok2 = Token::findsimplematch(var.typeEndToken(), ";"); tok2 != endToken; tok2 = tok2->next()) {
-                if (tok2->varId() == var.varId() || aliases->find(tok->varId()) != aliases->end()) {
+                if (tok2->varId() == var.declarationId() || aliases->find(tok->varId()) != aliases->end()) {
                     bool assign = false;
 
                     if (!membervar.empty()) {
@@ -312,7 +312,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                         else if (isMemberVariableUsage(tok2, var.isPointer(), membervar))
                             uninitStructMemberError(tok2, tok2->str() + "." + membervar);
                     } else {
-                        if (isVariableAssignment(tok2, var.isPointer(), tok2->varId() != var.varId(), true))
+                        if (isVariableAssignment(tok2, var.isPointer(), tok2->varId() != var.declarationId(), true))
                             assign = true;
 
                         // Use variable
@@ -336,7 +336,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
         }
 
         // variable is seen..
-        if (tok->varId() == var.varId() || aliases->find(tok->varId()) != aliases->end()) {
+        if (tok->varId() == var.declarationId() || aliases->find(tok->varId()) != aliases->end()) {
             if (!membervar.empty()) {
                 if (isMemberVariableAssignment(tok, membervar))
                     // TODO, is member variable used in rhs?
@@ -345,13 +345,13 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 if (isMemberVariableUsage(tok, var.isPointer(), membervar))
                     uninitStructMemberError(tok, tok->str() + "." + membervar);
             } else {
-                if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.varId(), true)) {
+                if (isVariableAssignment(tok, var.isPointer(), tok->varId() != var.declarationId(), true)) {
                     // Look if variable is used in rhs
                     bool rhs = false;
                     for (const Token *tok2 = tok->next(); tok2 && tok2->str() != ";"; tok2 = tok2->next()) {
                         if (tok2->str() == "=")
                             rhs = true;
-                        else if (rhs && (tok2->varId() == var.varId() || aliases->find(tok2->varId()) != aliases->end()))
+                        else if (rhs && (tok2->varId() == var.declarationId() || aliases->find(tok2->varId()) != aliases->end()))
                             uninitvarError(tok2, tok2->str());
                     }
                     return true;
@@ -360,7 +360,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 if (Token::Match(tok->tokAt(-4), "[;{}] %var% = & %var% ;")) {
                     const Variable *var1 = _tokenizer->getSymbolDatabase()->getVariableFromVarId(tok->tokAt(-3)->varId());
                     if (var1 && var1->isPointer()) {
-                        aliases->insert(var1->varId());
+                        aliases->insert(var1->declarationId());
                         continue;
                     }
                 }
@@ -368,7 +368,7 @@ bool LintUninitVar::checkScopeForVariable(const Scope* scope, const Token *tok, 
                 else if (var.isArray() && Token::Match(tok->tokAt(-3), "[;{}] %var% = %var% ;")) {
                     const Variable *var1 = _tokenizer->getSymbolDatabase()->getVariableFromVarId(tok->tokAt(-2)->varId());
                     if (var1 && var1->isPointer()) {
-                        aliases->insert(var1->varId());
+                        aliases->insert(var1->declarationId());
                         continue;
                     }
                 }
@@ -387,7 +387,7 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
 {
     const Token * const endpar = startparentheses->link();
     for (const Token *tok = startparentheses->next(); tok && tok != endpar; tok = tok->next()) {
-        if (tok->varId() == var.varId() || aliases.find(tok->varId()) != aliases.end()) {
+        if (tok->varId() == var.declarationId() || aliases.find(tok->varId()) != aliases.end()) {
             if (Token::Match(tok, "%var% . %var%")) {
                 if (tok->strAt(2) == membervar) {
                     if (isMemberVariableAssignment(tok, membervar))
@@ -451,7 +451,7 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
                     ++indentlevel;
                 else if (tok2->str() == "}")
                     --indentlevel;
-                else if (tok2->varId() == arg->varId()) {
+                else if (tok2->varId() == arg->declarationId()) {
                     if (indentlevel == 1 && Token::Match(tok2->tokAt(-2),"[;{}] * %var% =")) {
                         // Make sure RHS doesn't contain variable
                         for (const Token *rhs = tok2->next(); rhs; rhs = rhs->next()) {

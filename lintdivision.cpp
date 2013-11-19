@@ -74,7 +74,7 @@ void LintDivision::check()
 
         // ok if second operator is non-zero
         std::string second = tok->next() ? tok->strAt(1) : "";
-        if (second == "sizeof")
+        if (second == "sizeof" || second == "(" && Token::simpleMatch(tok->next()->link(), ") sizeof"))
             continue;
         if (Token::Match(tok->next(),"( %type% ) %num%")) {
             const Token* numtok = tok->tokAt(4);

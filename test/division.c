@@ -16,4 +16,5 @@ void casts() {
 
 void sz() {
 	int n = 1234 / sizeof(x);
+	int n = 1234 / (signed long int)sizeof(x);
 }

@@ -7,6 +7,7 @@ void f() {
 	int c = x / 2;
 	
 	float f1 = x / 0.5;
+	float f2 = 1.0 / (1.0 * (float)2);
 }
 
 void casts() {

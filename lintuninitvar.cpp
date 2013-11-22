@@ -451,6 +451,8 @@ bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool
                     ++indentlevel;
                 else if (tok2->str() == "}")
                     --indentlevel;
+                else if (tok2->str() == "return")
+                    return false;
                 else if (tok2->varId() == arg->declarationId()) {
                     if (indentlevel == 1 && Token::Match(tok2->tokAt(-2),"[;{}] * %var% =")) {
                         // Make sure RHS doesn't contain variable

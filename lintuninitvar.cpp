@@ -413,7 +413,7 @@ bool LintUninitVar::checkIfForWhileHead(const Token *startparentheses, const Var
 bool LintUninitVar::isVariableAssignment(const Token *vartok, bool pointer, bool alias, bool full)
 {
     // assign _whole_ var/array/struct
-    if (!alias && Token::Match(vartok->previous(), "[;{}=] %var% ="))
+    if (!alias && Token::Match(vartok->previous(), "[;{}=] %var% =") && !(pointer && Token::Match(vartok->tokAt(2), "%var% (")))
         return true;
     else if (alias && Token::Match(vartok->tokAt(-2), "[;{}=] * %var% ="))
         return true;
@@ -490,6 +490,8 @@ bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
 {
     if (isVariableAssignment(vartok, pointer, false, false))
         return false;
+    if (Token::Match(vartok->previous(), "[;{}] %var% ="))
+		return false;
     return true;
 }
 

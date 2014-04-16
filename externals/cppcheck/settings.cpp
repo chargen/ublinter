@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 Settings::Settings()
     : _terminate(false),
       debug(false), debugwarnings(false), debugFalsePositive(false),
-      ast(false), inconclusive(false), experimental(false),
+      inconclusive(false), experimental(false),
       _errorsOnly(false),
       _inlineSuppressions(false),
       _verbose(false),
@@ -35,7 +35,7 @@ Settings::Settings()
       _xml(false), _xml_version(1),
       _jobs(1),
       _exitCode(0),
-      _showtime(0),
+      _showtime(SHOWTIME_NONE),
       _maxConfigs(12),
       enforcedLang(None),
       reportProgress(false),

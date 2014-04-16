@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public:
      * \param unknown set to true if it's unknown if the scope is noreturn
      * \return true if scope ends with a function call that might be 'noreturn'
      */
-    bool IsScopeNoReturn(const Token *endScopeToken, bool *unknown = 0) const;
+    bool IsScopeNoReturn(const Token *endScopeToken, bool *unknown = nullptr) const;
 
     /**
      * Tokenize code
@@ -101,12 +101,20 @@ public:
     void setVarId();
 
     /**
-     * Simplify tokenlist
-     *
-     * @return false if there is an error that requires aborting
-     * the checking of this file.
-     */
-    bool simplifyTokenList();
+    * Basic simplification of tokenlist
+    *
+    * @return false if there is an error that requires aborting
+    * the checking of this file.
+    */
+    bool simplifyTokenList1();
+
+    /**
+    * Most aggressive simplification of tokenlist
+    *
+    * @return false if there is an error that requires aborting
+    * the checking of this file.
+    */
+    bool simplifyTokenList2();
 
     /**
      * Deletes dead code between 'begin' and 'end'.
@@ -361,9 +369,6 @@ public:
      */
     bool simplifyKnownVariablesSimplify(Token **tok2, Token *tok3, unsigned int varid, const std::string &structname, std::string &value, unsigned int valueVarId, bool valueIsPointer, const Token * const valueToken, int indentlevel) const;
 
-    /** Replace a "goto" with the statements */
-    void simplifyGoto();
-
     /** Simplify useless C++ empty namespaces, like: 'namespace %var% { }'*/
     void simplifyEmptyNamespaces();
 
@@ -505,12 +510,6 @@ public:
      * @return Modified string, e.g. "a"
      */
     static std::string simplifyString(const std::string &source);
-
-    /**
-     * Use "<" comparison instead of ">"
-     * Use "<=" comparison instead of ">="
-     */
-    void simplifyComparisonOrder();
 
     /**
      * Change "int const x;" into "const int x;"

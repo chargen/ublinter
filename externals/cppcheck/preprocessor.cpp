@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -584,7 +584,7 @@ std::string Preprocessor::removeComments(const std::string &str, const std::stri
                 }
             }
         } else if ((i==0 || std::isspace(str[i-1])) && str.compare(i,5,"__asm",0,5) == 0) {
-            while (i < str.size() && !std::isspace(str[i]))
+            while (i < str.size() && (std::isalpha(str[i]) || str[i]=='_'))
                 code << str[i++];
             while (i < str.size() && std::isspace(str[i]))
                 code << str[i++];
@@ -610,7 +610,7 @@ std::string Preprocessor::removeComments(const std::string &str, const std::stri
 
             // Add any pending inline suppressions that have accumulated.
             if (!suppressionIDs.empty()) {
-                if (_settings != NULL) {
+                if (_settings != nullptr) {
                     // Add the suppressions.
                     for (std::size_t j = 0; j < suppressionIDs.size(); ++j) {
                         const std::string errmsg(_settings->nomsg.addSuppression(suppressionIDs[j], filename, lineno));
@@ -638,7 +638,7 @@ std::string Preprocessor::removeComments(const std::string &str, const std::stri
 
                 // Add any pending inline suppressions that have accumulated.
                 if (!suppressionIDs.empty()) {
-                    if (_settings != NULL) {
+                    if (_settings != nullptr) {
                         // Relative filename
                         std::string relativeFilename(filename);
                         if (_settings->_relativePaths) {
@@ -994,6 +994,12 @@ void Preprocessor::preprocess(std::istream &srcCodeStream, std::string &processe
                 "#endfile\n"
                 ;
         }
+
+        for (std::vector<std::string>::iterator it = _settings->library.defines.begin();
+             it != _settings->library.defines.end();
+             ++it) {
+            forcedIncludes += *it;
+        }
     }
 
     if (!forcedIncludes.empty()) {
@@ -1139,7 +1145,7 @@ static Token *simplifyVarMapExpandValue(Token *tok, const std::map<std::string, 
 
     const std::map<std::string, std::string>::const_iterator it = variables.find(tok->str());
     if (it != variables.end()) {
-        TokenList tokenList(NULL);
+        TokenList tokenList(nullptr);
         std::istringstream istr(it->second);
         if (tokenList.createTokens(istr)) {
             // expand token list
@@ -1170,7 +1176,7 @@ static Token *simplifyVarMapExpandValue(Token *tok, const std::map<std::string, 
 static void simplifyVarMap(std::map<std::string, std::string> &variables)
 {
     for (std::map<std::string, std::string>::iterator i = variables.begin(); i != variables.end(); ++i) {
-        TokenList tokenList(NULL);
+        TokenList tokenList(nullptr);
         std::istringstream istr(i->second);
         if (tokenList.createTokens(istr)) {
             for (Token *tok = tokenList.front(); tok; tok = tok->next()) {
@@ -1635,7 +1641,7 @@ void Preprocessor::simplifyCondition(const std::map<std::string, std::string> &c
         if (it != cfg.end()) {
             if (!it->second.empty()) {
                 // Tokenize the value
-                Tokenizer tokenizer2(&settings,NULL);
+                Tokenizer tokenizer2(&settings, _errorLogger);
                 tokenizer2.tokenizeCondition(it->second);
 
                 // Copy the value tokens
@@ -1774,7 +1780,7 @@ std::string Preprocessor::getcode(const std::string &filedata, const std::string
                 break;
 
             if (line.find("=") != std::string::npos) {
-                Tokenizer tokenizer(_settings, NULL);
+                Tokenizer tokenizer(_settings, _errorLogger);
                 line.erase(0, sizeof("#pragma endasm"));
                 std::istringstream tempIstr(line);
                 tokenizer.tokenize(tempIstr, "");
@@ -2691,7 +2697,7 @@ public:
                 tok = tok->next();
             if (tok) {
                 bool optcomma = false;
-                while (NULL != (tok = tok->next())) {
+                while (nullptr != (tok = tok->next())) {
                     std::string str = tok->str();
                     if (str == "##")
                         continue;
@@ -2904,7 +2910,7 @@ std::string Preprocessor::expandMacros(const std::string &code, std::string file
 
     {
         // fill up "macros" with user defined macros
-        const std::map<std::string,std::string> cfgmap(getcfgmap(cfg,NULL,""));
+        const std::map<std::string,std::string> cfgmap(getcfgmap(cfg,nullptr,""));
         std::map<std::string, std::string>::const_iterator it;
         for (it = cfgmap.begin(); it != cfgmap.end(); ++it) {
             std::string s = it->first;
@@ -3151,12 +3157,51 @@ std::string Preprocessor::expandMacros(const std::string &code, std::string file
                             chr = !chr;
                         else if (str || chr)
                             continue;
-                        else if (std::isalnum(macrocode[i]) || macrocode[i] == '_') {
+                        else if (macrocode[i] == '.') { // 5. / .5
+                            if ((i > 0U && std::isdigit(macrocode[i-1])) ||
+                                (i+1 < macrocode.size() && std::isdigit(macrocode[i+1]))) {
+                                if (i > 0U && !std::isdigit(macrocode[i-1])) {
+                                    macrocode.insert(i, 1U, macroChar);
+                                    i++;
+                                }
+                                i++;
+                                if (i<macrocode.size() && std::isdigit(macrocode[i]))
+                                    i++;
+                                if (i+1U < macrocode.size() &&
+                                    (macrocode[i] == 'e' || macrocode[i] == 'E') &&
+                                    (macrocode[i+1] == '+' || macrocode[i+1] == '-')) {
+                                    i+=2;
+                                }
+                            }
+                        } else if (std::isalnum(macrocode[i]) || macrocode[i] == '_') {
                             if ((i > 0U)                        &&
                                 (!std::isalnum(macrocode[i-1])) &&
                                 (macrocode[i-1] != '_')         &&
                                 (macrocode[i-1] != macroChar)) {
                                 macrocode.insert(i, 1U, macroChar);
+                            }
+
+                            // 1e-7 / 1e+7
+                            if (i+3U < macrocode.size()     &&
+                                (std::isdigit(macrocode[i]) || macrocode[i]=='.')  &&
+                                (macrocode[i+1] == 'e' || macrocode[i+1] == 'E')   &&
+                                (macrocode[i+2] == '-' || macrocode[i+2] == '+')   &&
+                                std::isdigit(macrocode[i+3])) {
+                                i += 3U;
+                            }
+
+                            // 1.f / 1.e7
+                            if (i+2U < macrocode.size()    &&
+                                std::isdigit(macrocode[i]) &&
+                                macrocode[i+1] == '.'      &&
+                                std::isalpha(macrocode[i+2])) {
+                                i += 2U;
+                                if (i+2U < macrocode.size() &&
+                                    (macrocode[i+0] == 'e' || macrocode[i+0] == 'E')   &&
+                                    (macrocode[i+1] == '-' || macrocode[i+1] == '+')   &&
+                                    std::isdigit(macrocode[i+2])) {
+                                    i += 2U;
+                                }
                             }
                         }
                     }

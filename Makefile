@@ -1,7 +1,7 @@
 
 ifndef CXXFLAGS
     #CXXFLAGS=-pedantic -Wall -Wextra -Wabi -Wcast-qual -Wconversion -Wfloat-equal -Winline -Wmissing-declarations -Wmissing-format-attribute -Wno-long-long -Woverloaded-virtual -Wpacked -Wredundant-decls -Wshadow -Wsign-promo -g
-    CXXFLAGS=-g
+    CXXFLAGS=-g -std=c++11
 endif
 
 ifndef CXX
@@ -9,7 +9,7 @@ ifndef CXX
 endif
 
 ifndef CPPFLAGS
-    CPPFLAGS=-I. -Iexternals/cppcheck
+    CPPFLAGS=-I. -Iexternals/cppcheck -Iexternals/tinyxml2
 endif
 
 EXTOBJ = externals/cppcheck/errorlogger.o \
@@ -26,7 +26,10 @@ EXTOBJ = externals/cppcheck/errorlogger.o \
          externals/cppcheck/suppressions.o \
          externals/cppcheck/executionpath.o \
          externals/cppcheck/path.o \
-         externals/cppcheck/token.o
+         externals/cppcheck/token.o \
+         externals/cppcheck/library.o \
+         externals/cppcheck/valueflow.o \
+         externals/tinyxml2/tinyxml2.o
 
 ublinter: main.o lintdivision.o lintuninitvar.o $(EXTOBJ)
 	$(CXX) $(CXXFLAGS) -o ublinter main.o lintdivision.o lintuninitvar.o $(EXTOBJ) $(LDFLAGS)
@@ -98,4 +101,13 @@ externals/cppcheck/path.o: externals/cppcheck/path.cpp externals/cppcheck/*.h *.
 
 externals/cppcheck/token.o: externals/cppcheck/token.cpp externals/cppcheck/*.h *.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o externals/cppcheck/token.o -c externals/cppcheck/token.cpp
+
+externals/cppcheck/library.o: externals/cppcheck/library.cpp externals/cppcheck/*.h *.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o externals/cppcheck/library.o -c externals/cppcheck/library.cpp
+
+externals/cppcheck/valueflow.o: externals/cppcheck/valueflow.cpp externals/cppcheck/*.h *.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o externals/cppcheck/valueflow.o -c externals/cppcheck/valueflow.cpp
+
+externals/tinyxml2/tinyxml2.o: externals/tinyxml2/tinyxml2.cpp externals/tinyxml2/tinyxml2.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o externals/tinyxml2/tinyxml2.o -c externals/tinyxml2/tinyxml2.cpp
 

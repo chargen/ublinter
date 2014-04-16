@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,9 @@ public:
 
     /** Deallocate list */
     void deallocateTokens();
+
+    /** append file name if seen the first time; return its index in any case */
+    unsigned int appendFileIfNew(const std::string &file);
 
     /** get first token of list */
     const Token *front() const {

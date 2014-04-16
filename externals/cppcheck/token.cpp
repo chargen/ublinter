@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <cctype>
 #include <sstream>
 #include <map>
+#include <stack>
 
 Token::Token(Token **t) :
     tokensBack(t),
@@ -49,9 +50,9 @@ Token::Token(Token **t) :
     _isExpandedMacro(false),
     _isAttributeConstructor(false),
     _isAttributeUnused(false),
-    _astOperand1(NULL),
-    _astOperand2(NULL),
-    _astParent(NULL)
+    _astOperand1(nullptr),
+    _astOperand2(nullptr),
+    _astParent(nullptr)
 {
 }
 
@@ -205,6 +206,7 @@ void Token::deleteThis()
         _function = _next->_function;
         _variable = _next->_variable;
         _originalName = _next->_originalName;
+        values = _next->values;
         if (_link)
             _link->link(this);
 
@@ -228,6 +230,7 @@ void Token::deleteThis()
         _function = _previous->_function;
         _variable = _previous->_variable;
         _originalName = _previous->_originalName;
+        values = _previous->values;
         if (_link)
             _link->link(this);
 
@@ -755,7 +758,7 @@ bool Token::Match(const Token *tok, const char pattern[], unsigned int varid)
 
 std::size_t Token::getStrLength(const Token *tok)
 {
-    assert(tok != NULL);
+    assert(tok != nullptr);
 
     std::size_t len = 0;
     const std::string strValue(tok->strValue());
@@ -779,7 +782,7 @@ std::size_t Token::getStrLength(const Token *tok)
 
 std::string Token::getCharAt(const Token *tok, std::size_t index)
 {
-    assert(tok != NULL);
+    assert(tok != nullptr);
 
     const std::string strValue(tok->strValue());
     const char *str = strValue.c_str();
@@ -843,11 +846,11 @@ Token* Token::nextArgument() const
 
 const Token * Token::findClosingBracket() const
 {
-    const Token *closing = 0;
+    const Token *closing = nullptr;
 
     if (_str == "<") {
         unsigned int depth = 0;
-        for (closing = this; closing != NULL; closing = closing->next()) {
+        for (closing = this; closing != nullptr; closing = closing->next()) {
             if (closing->str() == "{" || closing->str() == "[" || closing->str() == "(")
                 closing = closing->link();
             else if (closing->str() == "}" || closing->str() == "]" || closing->str() == ")" || closing->str() == ";" || closing->str() == "=")
@@ -1006,8 +1009,8 @@ void Token::eraseTokens(Token *begin, const Token *end)
 
 void Token::createMutualLinks(Token *begin, Token *end)
 {
-    assert(begin != NULL);
-    assert(end != NULL);
+    assert(begin != nullptr);
+    assert(end != nullptr);
     assert(begin != end);
     begin->link(end);
     end->link(begin);
@@ -1143,7 +1146,62 @@ void Token::astOperand2(Token *tok)
     _astOperand2 = tok;
 }
 
-void Token::printAst() const
+bool Token::isCalculation() const
+{
+    if (!Token::Match(this, "%cop%|++|--"))
+        return false;
+
+    if (Token::Match(this, "*|&")) {
+        // dereference or address-of?
+        if (!this->astOperand2())
+            return false;
+
+        if (this->astOperand2()->str() == "[")
+            return false;
+
+        // type specification?
+        std::stack<const Token *> operands;
+        operands.push(this);
+        while (!operands.empty()) {
+            const Token *op = operands.top();
+            operands.pop();
+            if (op->isNumber() || op->varId() > 0)
+                return true;
+            if (op->astOperand1())
+                operands.push(op->astOperand1());
+            if (op->astOperand2())
+                operands.push(op->astOperand2());
+            else if (Token::Match(op, "*|&"))
+                return false;
+        }
+
+        // type specification => return false
+        return false;
+    }
+
+    return true;
+}
+
+std::string Token::expressionString() const
+{
+    const Token * const top = this;
+    const Token *start = top;
+    while (start->astOperand1() && start->astOperand2())
+        start = start->astOperand1();
+    const Token *end = top;
+    while (end->astOperand1() && end->astOperand2())
+        end = end->astOperand2();
+    std::string ret;
+    for (const Token *tok = start; tok && tok != end; tok = tok->next()) {
+        ret += tok->str();
+        if (Token::Match(tok, "%var%|%num% %var%|%num%"))
+            ret += " ";
+    }
+    return ret + end->str();
+
+}
+
+void Token::printAst(bool verbose) const
 {
     bool title = false;
 
@@ -1153,10 +1211,62 @@ void Token::printAst() const
             if (!title)
                 std::cout << "\n\n##AST" << std::endl;
             title = true;
-            std::cout << tok->astTop()->astString(" ") << std::endl;
+            if (verbose)
+                std::cout << tok->astTop()->astStringVerbose(0,0) << std::endl;
+            else
+                std::cout << tok->astTop()->astString(" ") << std::endl;
             print = false;
+            if (tok->str() == "(")
+                tok = tok->link();
         }
         if (Token::Match(tok, "[;{}]"))
             print = true;
+    }
+}
+
+static std::string indent(const unsigned int indent1, const unsigned int indent2)
+{
+    std::string ret(indent1,' ');
+    for (unsigned int i = indent1; i < indent2; i += 2)
+        ret += "| ";
+    return ret;
+}
+
+std::string Token::astStringVerbose(const unsigned int indent1, const unsigned int indent2) const
+{
+    std::string ret = _str + "\n";
+    if (_astOperand1) {
+        unsigned int i1 = indent1, i2 = indent2 + 2;
+        if (indent1==indent2 && !_astOperand2)
+            i1 += 2;
+        ret += indent(indent1,indent2) + (_astOperand2 ? "|-" : "`-") + _astOperand1->astStringVerbose(i1,i2);
+    }
+    if (_astOperand2) {
+        unsigned int i1 = indent1, i2 = indent2 + 2;
+        if (indent1==indent2)
+            i1 += 2;
+        ret += indent(indent1,indent2) + "`-" + _astOperand2->astStringVerbose(i1,i2);
+    }
+    return ret;
+}
+
+
+void Token::printValueFlow() const
+{
+    int line = -1;
+    std::cout << "\n\n##Value flow" << std::endl;
+    for (const Token *tok = this; tok; tok = tok->next()) {
+        if (tok->values.empty())
+            continue;
+        if (line != tok->linenr())
+            std::cout << "Line " << tok->linenr() << std::endl;
+        line = tok->linenr();
+        std::cout << "  " << tok->str() << ":{";
+        for (std::list<ValueFlow::Value>::const_iterator it=tok->values.begin(); it!=tok->values.end(); ++it) {
+            if (it != tok->values.begin())
+                std::cout << ",";
+            std::cout << it->intvalue;
+        }
+        std::cout << "}" << std::endl;
     }
 }

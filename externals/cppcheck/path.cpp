@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(__GNUC__) && defined(_WIN32)
+#undef __STRICT_ANSI__
+#endif
 #include <algorithm>
 #include <vector>
 #include <sstream>
@@ -121,12 +124,12 @@ bool Path::sameFileName(const std::string &fname1, const std::string &fname2)
 {
 #if defined(__linux__) || defined(__sun) || defined(__hpux)
     return bool(fname1 == fname2);
+#elif defined(_MSC_VER) || (defined(__GNUC__) && defined(_WIN32))
+    return bool(_stricmp(fname1.c_str(), fname2.c_str()) == 0);
 #elif defined(__GNUC__)
     return bool(strcasecmp(fname1.c_str(), fname2.c_str()) == 0);
 #elif defined(__BORLANDC__)
     return bool(stricmp(fname1.c_str(), fname2.c_str()) == 0);
-#elif defined(_MSC_VER)
-    return bool(_stricmp(fname1.c_str(), fname2.c_str()) == 0);
 #else
 #error Platform filename compare function needed
 #endif

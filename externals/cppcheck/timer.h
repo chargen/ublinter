@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include <ctime>
 #include "config.h"
 
-enum {
+enum  SHOWTIME_MODES {
     SHOWTIME_NONE = 0,
     SHOWTIME_FILE,
     SHOWTIME_SUMMARY,
@@ -59,7 +59,7 @@ public:
     TimerResults() {
     }
 
-    void ShowResults() const;
+    void ShowResults(SHOWTIME_MODES mode) const;
     virtual void AddResults(const std::string& str, std::clock_t clocks);
 
 private:

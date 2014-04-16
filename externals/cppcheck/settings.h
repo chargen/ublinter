@@ -1,6 +1,6 @@
 /*
  * Cppcheck - A tool for static C/C++ code analysis
- * Copyright (C) 2007-2013 Daniel Marjamäki and Cppcheck team.
+ * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "library.h"
 #include "suppressions.h"
 #include "standards.h"
+#include "timer.h"
 
 /// @addtogroup Core
 /// @{
@@ -61,9 +62,6 @@ public:
 
     /** @brief Is --debug-fp given? */
     bool debugFalsePositive;
-
-    /** @brief Experimental AST handling */
-    bool ast;
 
     /** @brief Inconclusive checks */
     bool inconclusive;
@@ -123,7 +121,7 @@ public:
     std::string _outputFormat;
 
     /** @brief show timing information (--showtime=file|summary|top5) */
-    unsigned int _showtime;
+    SHOWTIME_MODES _showtime;
 
     /** @brief List of include paths, e.g. "my/includes/" which should be used
         for finding include files inside source files. (-I) */

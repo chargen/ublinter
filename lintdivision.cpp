@@ -18,6 +18,7 @@
 
 #include "check.h"
 #include "mathlib.h"
+#include "symboldatabase.h"
 
 class LintDivision : public Check {
 public:
@@ -73,9 +74,13 @@ void LintDivision::check()
             continue;
 
         // ok if second operator is non-zero
-        std::string second = tok->next() ? tok->strAt(1) : "";
-        if (second == "sizeof" || second == "(" && Token::simpleMatch(tok->next()->link(), ") sizeof"))
+        const Token *rhs = tok->astOperand2();
+        while (rhs && rhs->str() == "(")
+            rhs = rhs->astOperand1();
+        if (rhs && rhs->str() == "sizeof")
             continue;
+
+        std::string second = tok->strAt(1);
         if (Token::Match(tok->next(),"( %type% ) %num%")) {
             const Token* numtok = tok->tokAt(4);
             if (Token::Match(tok->next(), "( float ) %num%"))
@@ -100,10 +105,32 @@ void LintDivision::check()
     }
 }
 
+static bool isConstExpr(const Token *tok)
+{
+    if (!tok)
+        return true;
+    if (tok->isNumber())
+        return true;
+    if (tok->isName()) {
+        if (Token::Match(tok, "%type% ) %var%|%num%"))
+            return true;
+        return tok->variable() && tok->variable()->isConst() && !tok->variable()->isPointer() && tok->variable()->isGlobal();
+    }
+    if (tok->isOp())
+        return isConstExpr(tok->astOperand1()) && isConstExpr(tok->astOperand2());
+    return false;
+}
+
 void LintDivision::divisionError(const Token *tok)
 {
-    reportError(tok,
-                Severity::error,
-                "division",
-                "Division, failed to determine that second operator is non-zero");
+    if (isConstExpr(tok->astOperand2()))
+        reportError(tok,
+                    Severity::error,
+                    "divconstexpr",
+                    "Division by constant expression, failed to determine that second operator is non-zero");
+    else
+        reportError(tok,
+                    Severity::error,
+                    "division",
+                    "Division, failed to determine that second operator is non-zero");
 }

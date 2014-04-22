@@ -491,7 +491,7 @@ bool LintUninitVar::isVariableUsage(const Token *vartok, bool pointer)
     if (isVariableAssignment(vartok, pointer, false, false))
         return false;
     if (Token::Match(vartok->previous(), "[;{}] %var% ="))
-		return false;
+        return false;
     return true;
 }
 

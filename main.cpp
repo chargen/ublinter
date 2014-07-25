@@ -28,7 +28,10 @@ public:
     }
 
     void reportErr(const ErrorLogger::ErrorMessage &msg) {
-        std::cerr << msg.toString(false) << std::endl;
+        if (!cppcheck.settings()._xml)
+            std::cerr << msg.toString(false) << std::endl;
+        else
+            std::cerr << msg.toXML(false, cppcheck.settings()._xml_version) << std::endl;
     }
 };
 
@@ -100,6 +103,11 @@ int main(int argc, char **argv)
         else if (std::strcmp(argv[i], "-q") == 0)
             settings._errorsOnly = true;
 
+        else if (std::strcmp(argv[i], "--xml") == 0) {
+            settings._xml = true;
+            settings._xml_version = 2;
+        }
+
         else {
             std::string path = Path::fromNativeSeparators(argv[i]);
             path = Path::removeQuotationMarks(path);
@@ -107,10 +115,16 @@ int main(int argc, char **argv)
         }
     }
 
+    if (settings._xml)
+        std::cerr << ErrorLogger::ErrorMessage::getXMLHeader(settings._xml_version) << std::endl;
+
     CppcheckExecutor cppcheckExecutor(settings);
     for (std::map<std::string,std::size_t>::const_iterator it = files.begin(); it != files.end(); ++it) {
         cppcheckExecutor.check(it->first);
     }
+
+    if (settings._xml)
+        std::cerr << ErrorLogger::ErrorMessage::getXMLFooter(settings._xml_version) << std::endl;
 
     return EXIT_SUCCESS;
 }

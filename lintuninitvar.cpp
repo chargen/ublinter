@@ -115,6 +115,8 @@ void LintUninitVar::checkScope(const Scope* scope)
         const Token* tok = Token::findmatch(i->typeEndToken(), "[=;]");
         if (tok && tok->str() == "=")
             continue;
+        if (Token::Match(tok,"; %varid% =", i->declarationId()))
+            continue;
 
         std::set<unsigned int> aliases;
 

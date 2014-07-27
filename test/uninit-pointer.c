@@ -12,6 +12,12 @@ int pointer2()
     *p = 0; // BAD
 }
 
+int pointer3()
+{
+    const Token *tok = findAssertPattern(_tokenizer->tokens());
+    const Token *endTok = tok ? tok->next()->link() : nullptr;
+}
+
 int alias1()
 {
     int *p;

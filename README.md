@@ -1,16 +1,35 @@
 ublinter
 ========
 
-Linter tool for C/C++ code. Only checks for:
+Linter for C/C++ code with a focus on undefined behaviour. Current checkers:
  * division by zero
-but the goal is to detect all UB. This is a noisy but sound tool. The goal is to detect all UB bugs in standard C99 code.
+ * integer overflow
+The goal is to detect all UB.
 
-ublinter doesn't look for syntax errors. Checking non-standard C/C++ code should be possible but there is no guarantee ublinter will detect all bugs.
+ublinter doesn't look for syntax errors.
+
+
+False positives / False negatives
+---------------------------------
+
+ublinter will warn when the code looks suspicious.
+
+When using ublinter, lots of false positives must be expected.
+
+Normally, static analysis tools are used during development. The tools are perhaps used by the developers before every commit. And the developers try to fix all the warnings the tools produce. ublinter is not intended to be used in this way - the false positives makes this usage impractical.
+
+The recommendation is that you use ublinter as a verification tool. For instance:
+ * After you or your team has worked for a while on a functionality, you can use ublinter as a verification that the functionality works. Run ublinter on your file and look at all warnings.
+ * When a release candidate is created you could run ublinter on it and look at all warnings.
+ * Run ublinter once a week on your source code, diff the results and only investigate new results.
+ * etc
 
 Design ideas
 ------------
 
 ublinter will assume that all conditions can always be both true/false. There will be no, or very little, handling of impossible execution paths.
+
+ublinter will assume that signed variables can be negative. perhaps in same cases it should even be assumed that variables have *any* value.
 
 Usage
 -----
@@ -21,7 +40,7 @@ Right now there is no proper tool support for Cppcheck extensions, to use this s
 
 To scan a file 1.c:
 
-    cppcheck --dump-file 1.c
+    cppcheck --dump 1.c
     python ublinter.py 1.c.dump
 
 This usage is far from ideal. So this is hopefully only temporary and will be improved later.

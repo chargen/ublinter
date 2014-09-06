@@ -25,6 +25,8 @@ The recommendation is that you use ublinter as a verification tool. For instance
  * Run ublinter once a week on your source code, diff the results and only investigate new results.
  * etc
 
+You can use ublinter as a complement to your static analysis tools.
+
 Design ideas
 ------------
 
@@ -35,13 +37,12 @@ ublinter will assume that signed variables can be negative. perhaps in same case
 Usage
 -----
 
-This tool is a Cppcheck extension. It relies on Cppcheck dumpfiles.
+Cppcheck is used to parse the code and create a dumpfile. Then the dump file is read by ublinter and it looks for UB.
 
-Right now there is no proper tool support for Cppcheck extensions, to use this script you must manually create the dump file and call this script.
-
-To scan a file 1.c:
+To scan a file 1.c with ublinter:
 
     cppcheck --dump 1.c
     python ublinter.py 1.c.dump
 
-This usage is far from ideal. So this is hopefully only temporary and will be improved later.
+The intention is that the output-format will be similar to Cppcheck. So plugins / report generators / etc can be reused for both Cppcheck and ublinter with minimal effort.
+

@@ -2,7 +2,6 @@ ublinter
 ========
 
 Linter tool for C/C++ code. Only checks for:
- * using uninitialized variables
  * division by zero
 but the goal is to detect all UB. This is a noisy but sound tool. The goal is to detect
 all UB bugs in standard C99 code.
@@ -14,52 +13,15 @@ Design ideas:
  * ublinter will assume that all conditions can always be both true/false.
    There will be no, or very little, handling of impossible execution paths.
 
-ublinter uses the cppcheck-core to parse code.
+Usage
+-----
 
-Limitations
------------
+This tool is a Cppcheck extension. It relies on Cppcheck dumpfiles.
 
-The intention is that the uninitialized variables checking will only look for cases where there is UB.
+Right now there is no proper tool support for Cppcheck extensions, to use this script you must manually create the dump file and call this script.
 
-I don't intend to report errors about global/static variables:
+To scan a file 1.c:
+# cppcheck --dump-file 1.c
+# python ublinter.py 1.c.dump
 
-    #include <stdio.h>
-
-    int x;
-
-    int main() {
-        printf("%i\n", x); // No UB => no error message
-        return 0;
-    }
-
-I don't intend to report errors about standard classes:
-
-    #include <string>
-    #include <iostream>
-
-    int main() {
-        std::string str;
-        std::cout << str << std::endl; // No UB => no error
-        return 0;
-    }
-
-
-Compiling
----------
-
-You should be able to use almost any C++ compiler to compile ublinter.
-
-Linux:
-
-    make
-
-Windows:
-
-    make LDFLAGS=-lshlwapi
-
-Flags:
-
-    CXX      : Compiler
-    CXXFLAGS : Compiler flags
-    CPPFLAGS : Preprocessor flags (include folders etc)
-    LDFLAGS  : Linker flags
+This usage is far from ideal. So this is hopefully only temporary and will be improved later.

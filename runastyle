@@ -1,7 +1,0 @@
-#!/bin/bash
-
-style="--style=stroustrup --indent=spaces=4 --indent-namespaces --lineend=linux --min-conditional-indent=0"
-options="--pad-header --unpad-paren --suffix=none --convert-tabs"
-
-astyle $style $options *.cpp
-astyle $style $options *.h

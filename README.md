@@ -4,7 +4,8 @@ ublinter
 Linter for C/C++ code with a focus on undefined behaviour. Current checkers:
  * division by zero
  * integer overflow
-The goal is to detect all UB.
+
+The goal is to add checkers for all undefined behaviour.
 
 ublinter doesn't look for syntax errors.
 

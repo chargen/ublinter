@@ -7,8 +7,6 @@ Linter for C/C++ code with a focus on undefined behaviour. Current checkers:
 
 The goal is to add checkers for all undefined behaviour.
 
-It will also be possible to add other checkers to ublinter that looks for doesn't specifically check for UB. If code looks dangerous then a warning is ok.
-
 ublinter doesn't look for syntax errors.
 
 

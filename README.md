@@ -13,9 +13,9 @@ ublinter doesn't look for syntax errors.
 False positives / False negatives
 ---------------------------------
 
-The idea is that ublinter will warn when the code looks suspicious / dangerous. it won't try to proove that there is something wrong.
+The idea is that ublinter will warn when the code looks suspicious / dangerous. it won't try to prove that there is something wrong.
 
-Still, don't expect that ublinter is sound (detects all UB). A sound tool would warn for every operation unless it can proove that nothing bad can ever happen.
+Still, don't expect that ublinter is sound (detects all UB). A sound tool would warn for every operation unless it can prove that nothing bad can ever happen.
 
 When using ublinter, lots of false positives must be expected.
 
